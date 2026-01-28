@@ -84,3 +84,17 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         });
     });
 });
+
+// Newsletter subscription handler
+function handleNewsletter(event) {
+    event.preventDefault();
+    const emailInput = document.getElementById('newsletterEmail');
+    const email = emailInput ? emailInput.value : '';
+    if (email) {
+        alert(`Thanks for subscribing! Updates will be sent to ${email}.`);
+        emailInput.value = '';
+    } else {
+        alert('Please enter a valid email address.');
+    }
+    return false;
+}

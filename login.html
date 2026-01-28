@@ -51,19 +51,56 @@
         </div>
     </section>
 
-    <!-- Footer -->
-    <footer>
+    <footer class="site-footer">
         <div class="container">
-            <div class="footer-content">
-                <img src="assets/images/logolmb.png" alt="La Maria Bakehouse logo" class="footer-logo">
-                <h3>La Maria Bakehouse</h3>
-                <p>&copy; 2026 La Maria Bakehouse. All rights reserved.</p>
-                <div class="social-links">
-                    <a href="#"><i class="fab fa-instagram"></i> Instagram</a>
-                    <a href="#"><i class="fab fa-facebook-f"></i> Facebook</a>
-                    <a href="#"><i class="fab fa-twitter"></i> Twitter</a>
-                    <a href="mailto:hello@lamariabakehouse.com"><i class="fas fa-envelope"></i> Email</a>
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <a href="index.html" class="logo">
+                        <img src="assets/images/logolmb.png" alt="La Maria Bakehouse logo" class="logo-img">
+                        <span>La Maria Bakehouse</span>
+                    </a>
+                    <p>Bringing sweetness to your life, one pastry at a time.</p>
+                    <div class="social-icons">
+                        <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                        <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                        <a href="mailto:hello@lamariabakehouse.com" aria-label="Email"><i class="fas fa-envelope"></i></a>
+                    </div>
                 </div>
+                <div class="footer-column">
+                    <h4>Explore</h4>
+                    <ul>
+                        <li><a href="index.html#featured">Menu</a></li>
+                        <li><a href="index.html#about">About Us</a></li>
+                        <li><a href="index.html#contact">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h4>Support</h4>
+                    <ul>
+                        <li><a href="#">FAQs</a></li>
+                        <li><a href="#">Terms of Service</a></li>
+                        <li><a href="#">Privacy Policy</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h4>Contact</h4>
+                    <ul>
+                        <li>123 Bakery Lane, Davao City</li>
+                        <li>+1 (555) 123-4567</li>
+                        <li><a href="mailto:hello@lamariabakehouse.com">hello@lamariabakehouse.com</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column newsletter">
+                    <h4>Stay in the loop</h4>
+                    <form id="newsletterForm" onsubmit="return handleNewsletter(event)">
+                        <input type="email" id="newsletterEmail" placeholder="Email address" required>
+                        <button type="submit" class="btn btn-sm">Subscribe</button>
+                    </form>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 La Maria Bakehouse. All rights reserved.</p>
             </div>
         </div>
     </footer>
