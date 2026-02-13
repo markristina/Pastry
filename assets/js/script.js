@@ -63,6 +63,32 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // Quantity Selector Logic
+    const quantitySelectors = document.querySelectorAll('.quantity-selector');
+    quantitySelectors.forEach(selector => {
+        const minusBtn = selector.querySelector('.minus');
+        const plusBtn = selector.querySelector('.plus');
+        const input = selector.querySelector('input');
+
+        minusBtn.addEventListener('click', () => {
+            let value = parseInt(input.value);
+            if (value > 1) {
+                input.value = value - 1;
+                // Auto-submit if it's in the cart page
+                const form = selector.closest('.cart-update-form');
+                if (form) form.submit();
+            }
+        });
+
+        plusBtn.addEventListener('click', () => {
+            let value = parseInt(input.value);
+            input.value = value + 1;
+            // Auto-submit if it's in the cart page
+            const form = selector.closest('.cart-update-form');
+            if (form) form.submit();
+        });
+    });
 });
 
 // Login Handler

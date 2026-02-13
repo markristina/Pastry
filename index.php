@@ -84,11 +84,17 @@ $featuredProducts = array_slice(getFeaturedProducts(), 0, 6);
                             <h3><?php echo htmlspecialchars($product['name']); ?></h3>
                             <p><?php echo htmlspecialchars($product['description']); ?></p>
                             <span class="price">₱<?php echo number_format($product['price'], 2); ?></span>
-                            <form method="POST" action="cart.php">
+                            <form method="POST" action="cart.php" class="add-to-cart-form">
                                 <input type="hidden" name="action" value="add">
                                 <input type="hidden" name="product_id" value="<?php echo htmlspecialchars($product['id']); ?>">
-                                <input type="hidden" name="quantity" value="1">
                                 <input type="hidden" name="redirect" value="cart.php">
+                                
+                                <div class="quantity-selector">
+                                    <button type="button" class="qty-btn minus"><i class="fas fa-minus"></i></button>
+                                    <input type="number" name="quantity" value="1" min="1" readonly>
+                                    <button type="button" class="qty-btn plus"><i class="fas fa-plus"></i></button>
+                                </div>
+                                
                                 <button type="submit" class="btn">Order Now</button>
                             </form>
                         </div>

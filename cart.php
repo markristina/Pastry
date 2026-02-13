@@ -34,12 +34,31 @@ function removeFromCart(string $productId): void {
     unset($_SESSION['cart'][$productId]);
 }
 
+function updateCartQuantity(string $productId, int $quantity): void {
+    if ($quantity < 1) {
+        removeFromCart($productId);
+        return;
+    }
+    if (isset($_SESSION['cart'][$productId])) {
+        $_SESSION['cart'][$productId]['quantity'] = $quantity;
+    }
+}
+
 if ($action === 'add' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $productId = $_POST['product_id'] ?? '';
     $quantity = (int)($_POST['quantity'] ?? 1);
     addToCart($productId, $quantity);
 
     header("Location: {$redirect}");
+    exit;
+}
+
+if ($action === 'update' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $productId = $_POST['product_id'] ?? '';
+    $quantity = (int)($_POST['quantity'] ?? 1);
+    updateCartQuantity($productId, $quantity);
+    
+    header('Location: cart.php');
     exit;
 }
 
@@ -119,7 +138,17 @@ foreach ($cartItems as $item) {
                         <tr>
                             <td><?php echo htmlspecialchars($item['product']['name']); ?></td>
                             <td>₱<?php echo number_format($item['product']['price'], 2); ?></td>
-                            <td><?php echo (int)$item['quantity']; ?></td>
+                            <td>
+                                <form method="POST" action="cart.php" class="cart-update-form" style="display: inline-block;">
+                                    <input type="hidden" name="action" value="update">
+                                    <input type="hidden" name="product_id" value="<?php echo htmlspecialchars($item['product']['id']); ?>">
+                                    <div class="quantity-selector" style="width: 120px;">
+                                        <button type="button" class="qty-btn minus"><i class="fas fa-minus"></i></button>
+                                        <input type="number" name="quantity" value="<?php echo (int)$item['quantity']; ?>" min="1" readonly>
+                                        <button type="button" class="qty-btn plus"><i class="fas fa-plus"></i></button>
+                                    </div>
+                                </form>
+                            </td>
                             <td>₱<?php echo number_format($item['product']['price'] * $item['quantity'], 2); ?></td>
                             <td>
                                 <a href="cart.php?action=remove&product_id=<?php echo urlencode($item['product']['id']); ?>" class="btn btn-outline btn-sm" onclick="return confirm('Remove item?');">Remove</a>
