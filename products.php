@@ -98,24 +98,39 @@ function ensureProductsSeeded(): void {
     ensureTables();
     $pdo = getPDO();
 
-    $stmt = $pdo->query('SELECT COUNT(*) FROM products');
-    $count = (int)$stmt->fetchColumn();
-    if ($count > 0) {
-        return;
-    }
-
     $seed = defaultProductSeed();
-    $insert = $pdo->prepare('INSERT INTO products (slug, name, description, price, image, category, badge, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, 1)');
+    
     foreach ($seed as $p) {
-        $insert->execute([
-            $p['id'],
-            $p['name'],
-            $p['description'],
-            $p['price'],
-            $p['image'],
-            null,
-            null,
-        ]);
+        // Check if product already exists
+        $stmt = $pdo->prepare('SELECT id FROM products WHERE slug = ?');
+        $stmt->execute([$p['id']]);
+        $existing = $stmt->fetch();
+        
+        if ($existing) {
+            // Update existing product with new image and other details
+            $update = $pdo->prepare('UPDATE products SET name = ?, description = ?, price = ?, image = ?, category = ?, badge = ? WHERE slug = ?');
+            $update->execute([
+                $p['name'],
+                $p['description'],
+                $p['price'],
+                $p['image'],
+                null,
+                null,
+                $p['id'],
+            ]);
+        } else {
+            // Insert new product
+            $insert = $pdo->prepare('INSERT INTO products (slug, name, description, price, image, category, badge, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, 1)');
+            $insert->execute([
+                $p['id'],
+                $p['name'],
+                $p['description'],
+                $p['price'],
+                $p['image'],
+                null,
+                null,
+            ]);
+        }
     }
 }
 
