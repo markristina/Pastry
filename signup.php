@@ -23,6 +23,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $passwordHash = password_hash($password, PASSWORD_DEFAULT);
             try {
                 $userId = createUser($name, $email, $passwordHash, $role);
+                // Notify admin of new user registration
+                notifyAdminOfNewUser($name, $email);
                 header('Location: login.php?signup=success');
                 exit;
             } catch (Throwable $e) {

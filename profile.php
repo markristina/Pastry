@@ -90,6 +90,28 @@ if ($userInitial === '') {
 }
 
 $myOrders = $userRole === 'customer' ? getOrdersByUserId($userId) : [];
+
+// Notifications
+$unreadCount = getUnreadNotificationsCount();
+$recentNotifications = getUnreadNotifications(5);
+$allNotifications = getAllNotifications(20);
+
+// Handle notification actions
+$notificationAction = $_GET['notification_action'] ?? null;
+if ($notificationAction === 'mark_read' && isset($_GET['notification_id'])) {
+    $notifId = (int)$_GET['notification_id'];
+    if ($notifId > 0) {
+        markNotificationAsRead($notifId);
+        // Refresh the page to show updated notifications
+        header('Location: profile.php#notifications');
+        exit;
+    }
+} elseif ($notificationAction === 'mark_all_read') {
+    markAllNotificationsAsRead();
+    // Refresh the page to show updated notifications
+    header('Location: profile.php#notifications');
+    exit;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -119,6 +141,74 @@ $myOrders = $userRole === 'customer' ? getOrdersByUserId($userId) : [];
                 <?php if ($userRole === 'admin'): ?>
                     <a href="admin.php" class="btn btn-sm">Admin</a>
                 <?php endif; ?>
+                
+                <!-- Notification Bell -->
+                <div class="admin-notification-wrapper">
+                    <button type="button" class="admin-notification-btn" id="notificationBtn">
+                        <i class="fa-solid fa-bell"></i>
+                        <?php if ($unreadCount > 0): ?>
+                            <span class="admin-notification-badge"><?php echo $unreadCount > 9 ? '9+' : $unreadCount; ?></span>
+                        <?php endif; ?>
+                    </button>
+                    <div class="admin-notification-dropdown" id="notificationDropdown">
+                        <div class="admin-notification-header">
+                            <h4>Notifications</h4>
+                            <?php if ($unreadCount > 0): ?>
+                                <a href="?notification_action=mark_all_read" class="admin-notification-mark-all">Mark all read</a>
+                            <?php endif; ?>
+                        </div>
+                        <div class="admin-notification-list">
+                            <?php if (empty($allNotifications)): ?>
+                                <div class="admin-notification-empty">No notifications yet</div>
+                            <?php else: ?>
+                                <?php foreach ($allNotifications as $notif): ?>
+                                    <div class="admin-notification-item <?php echo $notif['is_read'] ? '' : 'unread'; ?>" data-id="<?php echo (int)$notif['id']; ?>">
+                                        <div class="admin-notification-icon">
+                                            <?php 
+                                            $icon = 'fa-bell';
+                                            $iconClass = 'admin-notification-icon--default';
+                                            switch($notif['type']) {
+                                                case 'new_order':
+                                                    $icon = 'fa-shopping-cart';
+                                                    $iconClass = 'admin-notification-icon--order';
+                                                    break;
+                                                case 'product_added':
+                                                    $icon = 'fa-plus-circle';
+                                                    $iconClass = 'admin-notification-icon--product';
+                                                    break;
+                                                case 'product_updated':
+                                                    $icon = 'fa-edit';
+                                                    $iconClass = 'admin-notification-icon--product';
+                                                    break;
+                                                case 'product_deleted':
+                                                    $icon = 'fa-trash';
+                                                    $iconClass = 'admin-notification-icon--delete';
+                                                    break;
+                                                case 'new_user':
+                                                    $icon = 'fa-user-plus';
+                                                    $iconClass = 'admin-notification-icon--user';
+                                                    break;
+                                            }
+                                            ?>
+                                            <i class="fa-solid <?php echo $icon; ?> <?php echo $iconClass; ?>"></i>
+                                        </div>
+                                        <div class="admin-notification-content">
+                                            <div class="admin-notification-title"><?php echo htmlspecialchars($notif['title']); ?></div>
+                                            <div class="admin-notification-message"><?php echo htmlspecialchars($notif['message']); ?></div>
+                                            <div class="admin-notification-time"><?php echo date('M j, g:i A', strtotime($notif['created_at'])); ?></div>
+                                        </div>
+                                        <?php if (!$notif['is_read']): ?>
+                                            <a href="?notification_action=mark_read&notification_id=<?php echo (int)$notif['id']; ?>" class="admin-notification-read-btn" title="Mark as read">
+                                                <i class="fa-solid fa-circle"></i>
+                                            </a>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+                
                 <a href="logout.php" class="btn btn-sm">Logout</a>
             </div>
         </nav>
@@ -246,6 +336,7 @@ $myOrders = $userRole === 'customer' ? getOrdersByUserId($userId) : [];
                             </div>
                         <?php endforeach; ?>
                     </div>
+                    <a href="order-history.php" class="btn" style="margin-top: 12px; margin-right: 8px;">View Full Order History</a>
                     <a href="menu.php" class="btn btn-outline" style="margin-top: 12px;">Browse menu</a>
                 <?php endif; ?>
             </section>

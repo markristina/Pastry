@@ -56,11 +56,27 @@ function ensureTables(): void {
         customer_address TEXT NULL,
         customer_city VARCHAR(80) NULL,
         customer_postal VARCHAR(20) NULL,
+        payment_method VARCHAR(50) NULL DEFAULT 'cash_on_delivery',
+        payment_status VARCHAR(20) NULL DEFAULT 'pending',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         CONSTRAINT fk_orders_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     SQL);
+
+    // Add payment_method column if it doesn't exist (for existing tables)
+    try {
+        $pdo->exec("ALTER TABLE orders ADD COLUMN payment_method VARCHAR(50) NULL DEFAULT 'cash_on_delivery' AFTER customer_postal");
+    } catch (PDOException $e) {
+        // Column may already exist, ignore error
+    }
+
+    // Add payment_status column if it doesn't exist (for existing tables)
+    try {
+        $pdo->exec("ALTER TABLE orders ADD COLUMN payment_status VARCHAR(20) NULL DEFAULT 'pending' AFTER payment_method");
+    } catch (PDOException $e) {
+        // Column may already exist, ignore error
+    }
 
     $pdo->exec(<<<SQL
     CREATE TABLE IF NOT EXISTS order_items (
@@ -238,4 +254,111 @@ function updateOrderStatus(int $orderId, string $status): bool {
     $pdo = getPDO();
     $stmt = $pdo->prepare('UPDATE orders SET status = ? WHERE id = ?');
     return $stmt->execute([$status, $orderId]);
+}
+
+// ========================
+// Notification System
+// ========================
+
+// Create notifications table
+function ensureNotificationTable(): void {
+    $pdo = getPDO();
+    $pdo->exec(<<<SQL
+    CREATE TABLE IF NOT EXISTS notifications (
+        id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        type ENUM('new_order', 'product_added', 'product_updated', 'product_deleted', 'new_user') NOT NULL,
+        title VARCHAR(200) NOT NULL,
+        message TEXT NOT NULL,
+        reference_id VARCHAR(100) NULL,
+        is_read TINYINT(1) NOT NULL DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    SQL);
+}
+
+// Create a notification
+function createNotification(string $type, string $title, string $message, ?string $referenceId = null): int {
+    ensureNotificationTable();
+    $pdo = getPDO();
+    $stmt = $pdo->prepare('INSERT INTO notifications (type, title, message, reference_id) VALUES (?, ?, ?, ?)');
+    $stmt->execute([$type, $title, $message, $referenceId]);
+    return (int)$pdo->lastInsertId();
+}
+
+// Get all notifications (for admin)
+function getAllNotifications(int $limit = 50): array {
+    ensureNotificationTable();
+    $pdo = getPDO();
+    $stmt = $pdo->prepare('SELECT * FROM notifications ORDER BY created_at DESC LIMIT ?');
+    $stmt->bindValue(1, $limit, PDO::PARAM_INT);
+    $stmt->execute();
+    return $stmt->fetchAll();
+}
+
+// Get unread notifications count
+function getUnreadNotificationsCount(): int {
+    ensureNotificationTable();
+    $pdo = getPDO();
+    $stmt = $pdo->query('SELECT COUNT(*) FROM notifications WHERE is_read = 0');
+    return (int)$stmt->fetchColumn();
+}
+
+// Get recent unread notifications
+function getUnreadNotifications(int $limit = 10): array {
+    ensureNotificationTable();
+    $pdo = getPDO();
+    $stmt = $pdo->prepare('SELECT * FROM notifications WHERE is_read = 0 ORDER BY created_at DESC LIMIT ?');
+    $stmt->bindValue(1, $limit, PDO::PARAM_INT);
+    $stmt->execute();
+    return $stmt->fetchAll();
+}
+
+// Mark notification as read
+function markNotificationAsRead(int $id): bool {
+    ensureNotificationTable();
+    $pdo = getPDO();
+    $stmt = $pdo->prepare('UPDATE notifications SET is_read = 1 WHERE id = ?');
+    return $stmt->execute([$id]);
+}
+
+// Mark all notifications as read
+function markAllNotificationsAsRead(): bool {
+    ensureNotificationTable();
+    $pdo = getPDO();
+    $stmt = $pdo->query('UPDATE notifications SET is_read = 1 WHERE is_read = 0');
+    return $stmt->rowCount() > 0;
+}
+
+// Delete old notifications (keep last 100)
+function cleanupOldNotifications(): void {
+    ensureNotificationTable();
+    $pdo = getPDO();
+    $stmt = $pdo->query('DELETE FROM notifications WHERE id NOT IN (SELECT id FROM (SELECT id FROM notifications ORDER BY created_at DESC LIMIT 100) AS recent)');
+}
+
+// Helper function to notify admin of new order
+function notifyAdminOfNewOrder(int $orderId, string $customerName, float $total): void {
+    $message = "New order #{$orderId} from {$customerName} - ₱" . number_format($total, 2);
+    createNotification('new_order', 'New Order Received!', $message, (string)$orderId);
+}
+
+// Helper function to notify admin of new product
+function notifyAdminOfNewProduct(string $productName): void {
+    createNotification('product_added', 'New Product Added!', "Product '{$productName}' has been added to the catalog.");
+}
+
+// Helper function to notify admin of product update
+function notifyAdminOfProductUpdate(string $productName): void {
+    createNotification('product_updated', 'Product Updated!', "Product '{$productName}' has been updated.");
+}
+
+// Helper function to notify admin of product deletion
+function notifyAdminOfProductDeletion(string $productName): void {
+    createNotification('product_deleted', 'Product Deleted!', "Product '{$productName}' has been removed from the catalog.");
+}
+
+// Helper function to notify admin of new user registration
+function notifyAdminOfNewUser(string $userName, string $userEmail): void {
+    $message = "New customer registered: {$userName} ({$userEmail})";
+    createNotification('new_user', 'New Customer!', $message);
 }

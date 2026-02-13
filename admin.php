@@ -42,7 +42,11 @@ try {
             $message = 'Email already exists.';
         } else {
             $hash = password_hash($password, PASSWORD_DEFAULT);
-            createUser($name, $email, $hash, $role === 'admin' ? 'admin' : 'customer');
+            $newUserId = createUser($name, $email, $hash, $role === 'admin' ? 'admin' : 'customer');
+            // Notify admin of new user
+            if ($role === 'customer') {
+                notifyAdminOfNewUser($name, $email);
+            }
             $message = 'User created.';
         }
     } elseif ($action === 'update' && $_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -90,6 +94,8 @@ try {
             $productMessage = 'Please provide a valid product name and price.';
         } else {
             createProduct($name, $price, $description ?: null, $image ?: null, $category ?: null, $badge ?: null, $isActive);
+            // Notify admin of new product
+            notifyAdminOfNewProduct($name);
             $productMessage = 'Product created.';
         }
     } elseif ($productAction === 'update' && $_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -102,16 +108,39 @@ try {
         $badge = trim($_POST['badge'] ?? '');
         $isActive = isset($_POST['is_active']);
 
+        // Get old product name before update
+        $oldProduct = null;
+        foreach ($products as $p) {
+            if ((int)$p['id'] === $id) {
+                $oldProduct = $p;
+                break;
+            }
+        }
+
         if ($id <= 0 || $name === '' || $price <= 0) {
             $productMessage = 'Please provide valid product details.';
         } else {
             updateProduct($id, $name, $price, $description ?: null, $image ?: null, $category ?: null, $badge ?: null, $isActive);
+            // Notify admin of product update
+            notifyAdminOfProductUpdate($name);
             $productMessage = 'Product updated.';
         }
     } elseif ($productAction === 'delete' && isset($_GET['product_id'])) {
         $id = (int)($_GET['product_id'] ?? 0);
+        // Get product name before deletion
+        $productName = '';
+        foreach ($products as $p) {
+            if ((int)$p['id'] === $id) {
+                $productName = $p['name'];
+                break;
+            }
+        }
         if ($id > 0) {
             deleteProduct($id);
+            // Notify admin of product deletion
+            if ($productName) {
+                notifyAdminOfProductDeletion($productName);
+            }
             $productMessage = 'Product deleted.';
         }
     }
@@ -154,6 +183,28 @@ foreach ($orders as $o) {
 $viewOrderId = isset($_GET['view_order']) ? (int)$_GET['view_order'] : 0;
 $viewOrder = $viewOrderId > 0 ? getOrderById($viewOrderId) : null;
 $viewOrderItems = $viewOrder ? getOrderItems($viewOrderId) : [];
+
+// Notifications
+$unreadCount = getUnreadNotificationsCount();
+$recentNotifications = getUnreadNotifications(5);
+$allNotifications = getAllNotifications(20);
+
+// Handle notification actions
+$notificationAction = $_GET['notification_action'] ?? null;
+if ($notificationAction === 'mark_read' && isset($_GET['notification_id'])) {
+    $notifId = (int)$_GET['notification_id'];
+    if ($notifId > 0) {
+        markNotificationAsRead($notifId);
+        // Refresh the page to show updated notifications
+        header('Location: admin.php#notifications');
+        exit;
+    }
+} elseif ($notificationAction === 'mark_all_read') {
+    markAllNotificationsAsRead();
+    // Refresh the page to show updated notifications
+    header('Location: admin.php#notifications');
+    exit;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -198,6 +249,74 @@ $viewOrderItems = $viewOrder ? getOrderItems($viewOrderId) : [];
                     <i class="fa-solid fa-magnifying-glass"></i>
                     <input type="search" placeholder="Search orders, users, or products…" aria-label="Search admin data">
                 </form>
+                
+                <!-- Notification Bell -->
+                <div class="admin-notification-wrapper">
+                    <button type="button" class="admin-notification-btn" id="notificationBtn">
+                        <i class="fa-solid fa-bell"></i>
+                        <?php if ($unreadCount > 0): ?>
+                            <span class="admin-notification-badge"><?php echo $unreadCount > 9 ? '9+' : $unreadCount; ?></span>
+                        <?php endif; ?>
+                    </button>
+                    <div class="admin-notification-dropdown" id="notificationDropdown">
+                        <div class="admin-notification-header">
+                            <h4>Notifications</h4>
+                            <?php if ($unreadCount > 0): ?>
+                                <a href="?notification_action=mark_all_read" class="admin-notification-mark-all">Mark all read</a>
+                            <?php endif; ?>
+                        </div>
+                        <div class="admin-notification-list">
+                            <?php if (empty($allNotifications)): ?>
+                                <div class="admin-notification-empty">No notifications yet</div>
+                            <?php else: ?>
+                                <?php foreach ($allNotifications as $notif): ?>
+                                    <div class="admin-notification-item <?php echo $notif['is_read'] ? '' : 'unread'; ?>" data-id="<?php echo (int)$notif['id']; ?>">
+                                        <div class="admin-notification-icon">
+                                            <?php 
+                                            $icon = 'fa-bell';
+                                            $iconClass = 'admin-notification-icon--default';
+                                            switch($notif['type']) {
+                                                case 'new_order':
+                                                    $icon = 'fa-shopping-cart';
+                                                    $iconClass = 'admin-notification-icon--order';
+                                                    break;
+                                                case 'product_added':
+                                                    $icon = 'fa-plus-circle';
+                                                    $iconClass = 'admin-notification-icon--product';
+                                                    break;
+                                                case 'product_updated':
+                                                    $icon = 'fa-edit';
+                                                    $iconClass = 'admin-notification-icon--product';
+                                                    break;
+                                                case 'product_deleted':
+                                                    $icon = 'fa-trash';
+                                                    $iconClass = 'admin-notification-icon--delete';
+                                                    break;
+                                                case 'new_user':
+                                                    $icon = 'fa-user-plus';
+                                                    $iconClass = 'admin-notification-icon--user';
+                                                    break;
+                                            }
+                                            ?>
+                                            <i class="fa-solid <?php echo $icon; ?> <?php echo $iconClass; ?>"></i>
+                                        </div>
+                                        <div class="admin-notification-content">
+                                            <div class="admin-notification-title"><?php echo htmlspecialchars($notif['title']); ?></div>
+                                            <div class="admin-notification-message"><?php echo htmlspecialchars($notif['message']); ?></div>
+                                            <div class="admin-notification-time"><?php echo date('M j, g:i A', strtotime($notif['created_at'])); ?></div>
+                                        </div>
+                                        <?php if (!$notif['is_read']): ?>
+                                            <a href="?notification_action=mark_read&notification_id=<?php echo (int)$notif['id']; ?>" class="admin-notification-read-btn" title="Mark as read">
+                                                <i class="fa-solid fa-circle"></i>
+                                            </a>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="admin-user-pill">
                     <?php
                     $adminName = $_SESSION['user']['name'] ?? 'Admin';

@@ -75,50 +75,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_order'])) {
         }
 
         // Start transaction to ensure data consistency
-$pdo = getPDO();
-$pdo->beginTransaction();
+        $pdo = getPDO();
+        $pdo->beginTransaction();
 
-try {
-    // Create the order
-    $orderId = createOrder($userId, $cartTotal, $customerName, $customerPhone, $customerAddress, $customerCity, $customerPostal, $paymentMethod, $paymentStatus);
-    
-    // Add order items
-    foreach ($cartItems as $item) {
-        addOrderItem(
-            $orderId,
-            $item['product']['id'],
-            $item['product']['name'],
-            (float)$item['product']['price'],
-            (int)$item['quantity']
-        );
-    }
-    
-    // Commit the transaction
-    $pdo->commit();
-    
-    // Clear the cart only after successful order creation
-    $_SESSION['cart'] = [];
-    $orderPlaced = true;
-} catch (Throwable $e) {
-    // Rollback the transaction on error
-    $pdo->rollBack();
-    $orderError = 'Could not place order. ' . $e->getMessage();
-}
-
-        foreach ($cartItems as $item) {
-            addOrderItem(
-                $orderId,
-                $item['product']['id'],
-                $item['product']['name'],
-                (float)$item['product']['price'],
-                (int)$item['quantity']
-            );
+        try {
+            // Create the order
+            $orderId = createOrder($userId, $cartTotal, $customerName, $customerPhone, $customerAddress, $customerCity, $customerPostal, $paymentMethod, $paymentStatus);
+            
+            // Add order items
+            foreach ($cartItems as $item) {
+                addOrderItem(
+                    $orderId,
+                    $item['product']['id'],
+                    $item['product']['name'],
+                    (float)$item['product']['price'],
+                    (int)$item['quantity']
+                );
+            }
+            
+            // Commit the transaction
+            $pdo->commit();
+            
+            // Notify admin of new order
+            $customerNameForNotify = $customerName ?: 'Customer';
+            notifyAdminOfNewOrder($orderId, $customerNameForNotify, $cartTotal);
+            
+            // Clear the cart only after successful order creation
+            $_SESSION['cart'] = [];
+            $orderPlaced = true;
+        } catch (Throwable $e) {
+            // Rollback the transaction on error
+            $pdo->rollBack();
+            $orderError = 'Could not place order. ' . $e->getMessage();
         }
-
-        $_SESSION['cart'] = [];
-        $orderPlaced = true;
-    } catch (Throwable $e) {
-        $orderError = 'Could not place order. Please try again.';
+    } catch (Exception $e) {
+        $orderError = 'Order processing error: ' . $e->getMessage();
     }
 }
 ?>

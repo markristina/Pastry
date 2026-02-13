@@ -570,7 +570,7 @@ header nav {
 body.auth-page {
     position: relative;
     min-height: 100vh;
-    background-image: linear-gradient(rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.4)), url('../images/background.png');
+    background-image: linear-gradient(135deg, rgba(62, 39, 35, 0.75) 0%, rgba(78, 49, 44, 0.7) 100%), url('../images/background.png');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
@@ -597,12 +597,12 @@ body.auth-page::after {
     background-color: rgba(255, 255, 255, 0.98);
     padding: 50px 40px;
     border-radius: 24px;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.15);
-    border: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 25px 60px rgba(0,0,0,0.25), 0 0 1px rgba(0,0,0,0.1);
+    border: 1px solid rgba(255, 255, 255, 0.9);
     width: 100%;
     max-width: 460px;
     text-align: center;
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(15px);
 }
 
 .auth-box h2 {
@@ -721,9 +721,10 @@ body.auth-page::after {
     letter-spacing: 0.2em;
     font-size: 0.82rem;
     font-weight: 600;
-    color: var(--secondary-color);
+    color: var(--primary-color);
     margin-bottom: 10px;
 }
+
 
 .hero h1 {
     color: var(--white);
@@ -736,8 +737,9 @@ body.auth-page::after {
     font-size: 1.1rem;
     margin-bottom: 30px;
     line-height: 1.7;
-    color: #f8f3ef;
+    color: #e8e0d8;
 }
+
 
 .hero-lead {
     font-size: 1.15rem;
@@ -1202,6 +1204,17 @@ body.auth-page::after {
     color: #f5e6d8;
 }
 
+.hero-note a {
+    color: var(--white);
+    font-weight: 600;
+    border-bottom: 2px solid var(--accent-color);
+    transition: all 0.3s ease;
+}
+
+.hero-note a:hover {
+    color: var(--accent-color);
+}
+
 .featured {
     padding: 90px 0;
     text-align: center;
@@ -1631,9 +1644,10 @@ body.auth-page::after {
 }
 
 .feature-card p {
-    color: #666;
+    color: #5d4037;
     font-size: 1rem;
 }
+
 
 .feature-card i + h3 {
     margin-top: 5px;
@@ -1670,9 +1684,10 @@ body.auth-page::after {
 
 .about-text p {
     margin-bottom: 20px;
-    color: #555;
+    color: #4a3d35;
     font-size: 1.1rem;
 }
+
 
 .about-img {
     flex: 1;
@@ -1751,9 +1766,29 @@ body.auth-page::after {
 
 .contact-form .form-group input,
 .contact-form .form-group textarea {
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 12px;
+    border: 1.5px solid rgba(255, 255, 255, 0.3);
     background-color: rgba(255, 255, 255, 0.95);
     color: var(--text-color);
-    border-color: rgba(255, 255, 255, 0.3);
+    font-family: inherit;
+    transition: all 0.3s ease;
+}
+
+.contact-form .form-group textarea {
+    resize: vertical;
+    min-height: 120px;
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.contact-form .form-group input:focus,
+.contact-form .form-group textarea:focus {
+    outline: none;
+    border-color: #fff;
+    background-color: #fff;
+    box-shadow: 0 0 0 4px rgba(255, 127, 80, 0.2);
 }
 
 .contact-form .form-group input::placeholder,
@@ -1896,13 +1931,14 @@ body.auth-page::after {
 }
 
 .pastry-info p {
-    color: #6d5d58;
+    color: #4a3d35;
     font-size: 0.9rem;
     line-height: 1.5;
     margin: 0 0 12px;
     flex-grow: 1;
     padding: 0 5px;
 }
+
 
 .pastry-cta {
     margin-top: 10px;
@@ -2452,4 +2488,232 @@ body.auth-page::after {
     font-weight: 700;
     color: #e74c3c;
     margin-bottom: 14px;
+}
+
+/* ======================
+   ADMIN NOTIFICATIONS
+   ====================== */
+
+.admin-notification-wrapper {
+    position: relative;
+}
+
+.admin-notification-btn {
+    background: #fff;
+    border: 1px solid rgba(141, 110, 99, 0.15);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease;
+    color: #5d4037;
+}
+
+.admin-notification-btn:hover {
+    background: rgba(141, 110, 99, 0.08);
+    border-color: rgba(141, 110, 99, 0.25);
+}
+
+.admin-notification-btn i {
+    font-size: 1.1rem;
+}
+
+.admin-notification-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: #e74c3c;
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 700;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    border: 2px solid #fff;
+}
+
+.admin-notification-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 360px;
+    max-height: 480px;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(141, 110, 99, 0.12);
+    z-index: 1000;
+    display: none;
+    overflow: hidden;
+}
+
+.admin-notification-dropdown.show {
+    display: block;
+    animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.admin-notification-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 18px;
+    border-bottom: 1px solid rgba(141, 110, 99, 0.1);
+    background: rgba(141, 110, 99, 0.03);
+}
+
+.admin-notification-header h4 {
+    margin: 0;
+    font-size: 1rem;
+    color: #3e2723;
+}
+
+.admin-notification-mark-all {
+    font-size: 0.85rem;
+    color: #8d6e63;
+    font-weight: 500;
+}
+
+.admin-notification-mark-all:hover {
+    color: #5d4037;
+    text-decoration: underline;
+}
+
+.admin-notification-list {
+    max-height: 380px;
+    overflow-y: auto;
+}
+
+.admin-notification-empty {
+    padding: 40px 20px;
+    text-align: center;
+    color: #8d6e63;
+    font-size: 0.95rem;
+}
+
+.admin-notification-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(141, 110, 99, 0.06);
+    transition: background 0.15s ease;
+    position: relative;
+}
+
+.admin-notification-item:hover {
+    background: rgba(141, 110, 99, 0.04);
+}
+
+.admin-notification-item.unread {
+    background: rgba(255, 112, 67, 0.05);
+}
+
+.admin-notification-item.unread::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: #ff7043;
+}
+
+.admin-notification-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.admin-notification-icon--default {
+    background: rgba(141, 110, 99, 0.12);
+    color: #5d4037;
+}
+
+.admin-notification-icon--order {
+    background: rgba(76, 175, 80, 0.15);
+    color: #2e7d32;
+}
+
+.admin-notification-icon--product {
+    background: rgba(33, 150, 243, 0.15);
+    color: #1565c0;
+}
+
+.admin-notification-icon--delete {
+    background: rgba(244, 67, 54, 0.15);
+    color: #c62828;
+}
+
+.admin-notification-icon--user {
+    background: rgba(255, 152, 0, 0.15);
+    color: #e65100;
+}
+
+.admin-notification-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.admin-notification-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #3e2723;
+    margin-bottom: 2px;
+}
+
+.admin-notification-message {
+    font-size: 0.85rem;
+    color: #5d4037;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.admin-notification-time {
+    font-size: 0.75rem;
+    color: #8d6e63;
+    margin-top: 4px;
+}
+
+.admin-notification-read-btn {
+    color: #ff7043;
+    padding: 4px;
+    flex-shrink: 0;
+}
+
+.admin-notification-read-btn:hover {
+    color: #e64a19;
+}
+
+/* Responsive notification dropdown */
+@media (max-width: 480px) {
+    .admin-notification-dropdown {
+        width: 300px;
+        right: -60px;
+    }
 }

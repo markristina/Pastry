@@ -45,6 +45,24 @@ document.addEventListener('DOMContentLoaded', () => {
             filterTable(usersBody, term);
         });
     }
+
+    // Admin: notification dropdown toggle
+    const notificationBtn = document.getElementById('notificationBtn');
+    const notificationDropdown = document.getElementById('notificationDropdown');
+    
+    if (notificationBtn && notificationDropdown) {
+        notificationBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            notificationDropdown.classList.toggle('show');
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!notificationDropdown.contains(e.target) && !notificationBtn.contains(e.target)) {
+                notificationDropdown.classList.remove('show');
+            }
+        });
+    }
 });
 
 // Login Handler
