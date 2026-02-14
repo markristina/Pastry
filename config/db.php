@@ -78,6 +78,43 @@ function ensureTables(): void {
         // Column may already exist, ignore error
     }
 
+    // Migrate from old category column to new category_id system
+    try {
+        // Add new category_id column if it doesn't exist
+        $pdo->exec("ALTER TABLE products ADD COLUMN category_id BIGINT UNSIGNED NULL AFTER image");
+        
+        // Add foreign key constraint if it doesn't exist
+        $pdo->exec("ALTER TABLE products ADD CONSTRAINT fk_products_category FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL");
+    } catch (PDOException $e) {
+        // Column or constraint may already exist, ignore error
+    }
+
+    // Migrate existing category data if needed
+    try {
+        // Check if old category column exists and has data
+        $stmt = $pdo->query("SHOW COLUMNS FROM products LIKE 'category'");
+        if ($stmt->rowCount() > 0) {
+            // Migrate data from old category column to new category_id
+            $migrateStmt = $pdo->prepare("
+                UPDATE products p 
+                SET p.category_id = (
+                    SELECT c.id 
+                    FROM categories c 
+                    WHERE LOWER(c.name) = LOWER(p.category) 
+                    OR LOWER(c.slug) = LOWER(p.category)
+                    LIMIT 1
+                )
+                WHERE p.category IS NOT NULL AND p.category != ''
+            ");
+            $migrateStmt->execute();
+            
+            // Drop the old category column
+            $pdo->exec("ALTER TABLE products DROP COLUMN category");
+        }
+    } catch (PDOException $e) {
+        // Migration may have already been done, ignore error
+    }
+
     $pdo->exec(<<<SQL
     CREATE TABLE IF NOT EXISTS order_items (
         id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -91,6 +128,19 @@ function ensureTables(): void {
     SQL);
 
     $pdo->exec(<<<SQL
+    CREATE TABLE IF NOT EXISTS categories (
+        id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(100) NOT NULL UNIQUE,
+        slug VARCHAR(100) NOT NULL UNIQUE,
+        description TEXT NULL,
+        icon VARCHAR(50) NULL,
+        sort_order INT NOT NULL DEFAULT 0,
+        is_active TINYINT(1) NOT NULL DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    SQL);
+
+    $pdo->exec(<<<SQL
     CREATE TABLE IF NOT EXISTS products (
         id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         slug VARCHAR(100) NOT NULL UNIQUE,
@@ -98,7 +148,7 @@ function ensureTables(): void {
         description TEXT NULL,
         price DECIMAL(10,2) NOT NULL,
         image VARCHAR(255) NULL,
-        category VARCHAR(100) NULL,
+        category_id BIGINT UNSIGNED NULL,
         badge VARCHAR(60) NULL,
         is_active TINYINT(1) NOT NULL DEFAULT 1,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -361,4 +411,90 @@ function notifyAdminOfProductDeletion(string $productName): void {
 function notifyAdminOfNewUser(string $userName, string $userEmail): void {
     $message = "New customer registered: {$userName} ({$userEmail})";
     createNotification('new_user', 'New Customer!', $message);
+}
+
+// ========================
+// Category Management
+// ========================
+
+// Seed default categories if none exist
+function seedDefaultCategories(): void {
+    $pdo = getPDO();
+    $stmt = $pdo->query("SELECT COUNT(*) FROM categories");
+    $categoryCount = (int)$stmt->fetchColumn();
+    
+    if ($categoryCount === 0) {
+        $defaultCategories = [
+            ['name' => 'Croissants', 'slug' => 'croissants', 'description' => 'Buttery, flaky French pastries', 'icon' => 'fa-croissant', 'sort_order' => 1],
+            ['name' => 'Cakes', 'slug' => 'cakes', 'description' => 'Celebration cakes and cupcakes', 'icon' => 'fa-birthday-cake', 'sort_order' => 2],
+            ['name' => 'Pastries', 'slug' => 'pastries', 'description' => 'Assorted sweet and savory pastries', 'icon' => 'fa-cookie', 'sort_order' => 3],
+            ['name' => 'Breads', 'slug' => 'breads', 'description' => 'Freshly baked breads and rolls', 'icon' => 'fa-bread-slice', 'sort_order' => 4],
+            ['name' => 'Tarts', 'slug' => 'tarts', 'description' => 'Fruit tarts and specialty tarts', 'icon' => 'fa-pizza-slice', 'sort_order' => 5],
+            ['name' => 'Filipino Delights', 'slug' => 'filipino-delights', 'description' => 'Traditional Filipino baked goods', 'icon' => 'fa-star', 'sort_order' => 6]
+        ];
+        
+        $insert = $pdo->prepare('INSERT INTO categories (name, slug, description, icon, sort_order, is_active) VALUES (?, ?, ?, ?, ?, 1)');
+        foreach ($defaultCategories as $category) {
+            $insert->execute([$category['name'], $category['slug'], $category['description'], $category['icon'], $category['sort_order']]);
+        }
+    }
+}
+
+// Get all active categories
+function getAllCategories(): array {
+    seedDefaultCategories();
+    $pdo = getPDO();
+    $stmt = $pdo->query('SELECT * FROM categories WHERE is_active = 1 ORDER BY sort_order ASC, name ASC');
+    return $stmt->fetchAll();
+}
+
+// Get category by ID
+function getCategoryById(int $id): ?array {
+    $pdo = getPDO();
+    $stmt = $pdo->prepare('SELECT * FROM categories WHERE id = ? LIMIT 1');
+    $stmt->execute([$id]);
+    $row = $stmt->fetch();
+    return $row ?: null;
+}
+
+// Get category by slug
+function getCategoryBySlug(string $slug): ?array {
+    $pdo = getPDO();
+    $stmt = $pdo->prepare('SELECT * FROM categories WHERE slug = ? LIMIT 1');
+    $stmt->execute([$slug]);
+    $row = $stmt->fetch();
+    return $row ?: null;
+}
+
+// Create new category
+function createCategory(string $name, string $description = null, string $icon = null, int $sortOrder = 0): int {
+    $pdo = getPDO();
+    $slug = strtolower(preg_replace('/[^a-z0-9]+/i', '-', $name));
+    $slug = trim($slug, '-');
+    
+    $stmt = $pdo->prepare('INSERT INTO categories (name, slug, description, icon, sort_order, is_active) VALUES (?, ?, ?, ?, ?, 1)');
+    $stmt->execute([$name, $slug, $description, $icon, $sortOrder]);
+    return (int)$pdo->lastInsertId();
+}
+
+// Update category
+function updateCategory(int $id, string $name, string $description = null, string $icon = null, int $sortOrder = 0, bool $isActive = true): bool {
+    $pdo = getPDO();
+    $stmt = $pdo->prepare('UPDATE categories SET name = ?, description = ?, icon = ?, sort_order = ?, is_active = ? WHERE id = ?');
+    return $stmt->execute([$name, $description, $icon, $sortOrder, $isActive ? 1 : 0, $id]);
+}
+
+// Delete category
+function deleteCategory(int $id): bool {
+    $pdo = getPDO();
+    $stmt = $pdo->prepare('DELETE FROM categories WHERE id = ?');
+    return $stmt->execute([$id]);
+}
+
+// Get products by category
+function getProductsByCategory(int $categoryId): array {
+    $pdo = getPDO();
+    $stmt = $pdo->prepare('SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.category_id = ? AND p.is_active = 1 ORDER BY p.created_at DESC');
+    $stmt->execute([$categoryId]);
+    return $stmt->fetchAll();
 }

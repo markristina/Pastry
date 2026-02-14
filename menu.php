@@ -7,7 +7,21 @@ if (isset($_SESSION['cart'])) {
     }
 }
 require_once __DIR__ . '/products.php';
-$products = getFeaturedProducts();
+
+// Handle category filtering
+$selectedCategory = $_GET['category'] ?? null;
+if ($selectedCategory) {
+    $category = getCategoryBySlug($selectedCategory);
+    if ($category) {
+        $products = getProductsByCategory($category['id']);
+    } else {
+        $products = getFeaturedProducts();
+    }
+} else {
+    $products = getFeaturedProducts();
+}
+
+$categories = getAllCategories();
 $isLoggedIn = isset($_SESSION['user']);
 ?>
 <!DOCTYPE html>
@@ -69,11 +83,43 @@ $isLoggedIn = isset($_SESSION['user']);
             <p class="section-eyebrow">Bakehouse Selection</p>
             <h2 class="section-title">Curated classics & seasonal treats</h2>
         </div>
+        
+        <!-- Category Filter -->
+        <div class="category-filter" style="margin-bottom: 2rem; text-align: center;">
+            <div class="category-buttons" style="display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; margin-bottom: 1rem;">
+                <a href="menu.php" class="category-btn <?php echo !$selectedCategory ? 'active' : ''; ?>">
+                    <i class="fas fa-th"></i> All Products
+                </a>
+                <?php foreach ($categories as $category): ?>
+                    <a href="menu.php?category=<?php echo htmlspecialchars($category['slug']); ?>" 
+                       class="category-btn <?php echo ($selectedCategory === $category['slug']) ? 'active' : ''; ?>">
+                        <i class="fas <?php echo htmlspecialchars($category['icon'] ?? 'fa-tag'); ?>"></i>
+                        <?php echo htmlspecialchars($category['name']); ?>
+                    </a>
+                <?php endforeach; ?>
+            </div>
+            <?php if ($selectedCategory && isset($category)): ?>
+                <p class="selected-category" style="color: #8d6e63; font-size: 0.9rem; margin: 0.5rem 0;">
+                    <i class="fas <?php echo htmlspecialchars($category['icon'] ?? 'fa-tag'); ?>"></i>
+                    Showing: <?php echo htmlspecialchars($category['name']); ?>
+                    <?php if ($category['description']): ?>
+                        - <?php echo htmlspecialchars($category['description']); ?>
+                    <?php endif; ?>
+                </p>
+            <?php endif; ?>
+        </div>
+        
         <div class="pastry-grid">
             <?php foreach ($products as $product): ?>
                 <article class="pastry-card" id="<?php echo htmlspecialchars($product['id']); ?>">
                     <div class="pastry-img">
                         <img src="<?php echo htmlspecialchars($product['image']); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>">
+                        <?php if ($product['category_name']): ?>
+                            <div class="pastry-category">
+                                <i class="fas <?php echo htmlspecialchars($product['category_icon'] ?? 'fa-tag'); ?>"></i>
+                                <?php echo htmlspecialchars($product['category_name']); ?>
+                            </div>
+                        <?php endif; ?>
                     </div>
                     <div class="pastry-info">
                         <h3><?php echo htmlspecialchars($product['name']); ?></h3>
@@ -102,6 +148,15 @@ $isLoggedIn = isset($_SESSION['user']);
                 </article>
             <?php endforeach; ?>
         </div>
+        
+        <?php if (empty($products)): ?>
+            <div style="text-align: center; padding: 3rem; color: #8d6e63;">
+                <i class="fas fa-cookie-bite" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                <h3>No products found</h3>
+                <p>Try selecting a different category or check back later for new treats!</p>
+                <a href="menu.php" class="btn btn-outline" style="margin-top: 1rem;">View All Products</a>
+            </div>
+        <?php endif; ?>
     </div>
 </section>
 

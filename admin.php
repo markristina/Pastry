@@ -86,14 +86,14 @@ try {
         $price = (float)($_POST['product_price'] ?? 0);
         $description = trim($_POST['product_description'] ?? '');
         $image = trim($_POST['product_image'] ?? '');
-        $category = trim($_POST['product_category'] ?? '');
+        $categoryId = !empty($_POST['product_category_id']) ? (int)($_POST['product_category_id']) : null;
         $badge = trim($_POST['product_badge'] ?? '');
         $isActive = isset($_POST['product_active']);
 
         if ($name === '' || $price <= 0) {
             $productMessage = 'Please provide a valid product name and price.';
         } else {
-            createProduct($name, $price, $description ?: null, $image ?: null, $category ?: null, $badge ?: null, $isActive);
+            createProduct($name, $price, $description ?: null, $image ?: null, $categoryId, $badge ?: null, $isActive);
             // Notify admin of new product
             notifyAdminOfNewProduct($name);
             $productMessage = 'Product created.';
@@ -104,7 +104,7 @@ try {
         $price = (float)($_POST['price'] ?? 0);
         $description = trim($_POST['description'] ?? '');
         $image = trim($_POST['image'] ?? '');
-        $category = trim($_POST['category'] ?? '');
+        $categoryId = !empty($_POST['category_id']) ? (int)($_POST['category_id']) : null;
         $badge = trim($_POST['badge'] ?? '');
         $isActive = isset($_POST['is_active']);
 
@@ -120,7 +120,7 @@ try {
         if ($id <= 0 || $name === '' || $price <= 0) {
             $productMessage = 'Please provide valid product details.';
         } else {
-            updateProduct($id, $name, $price, $description ?: null, $image ?: null, $category ?: null, $badge ?: null, $isActive);
+            updateProduct($id, $name, $price, $description ?: null, $image ?: null, $categoryId, $badge ?: null, $isActive);
             // Notify admin of product update
             notifyAdminOfProductUpdate($name);
             $productMessage = 'Product updated.';
@@ -149,6 +149,7 @@ try {
 }
 
 $products = getAllProducts();
+$categories = getAllCategories();
 
 // Simple dashboard metrics
 $totalOrders = count($orders);
@@ -496,8 +497,13 @@ if ($notificationAction === 'mark_read' && isset($_GET['notification_id'])) {
                             <input type="text" id="product_name" name="product_name" required>
                         </div>
                         <div class="form-group">
-                            <label for="product_category">Category (optional)</label>
-                            <input type="text" id="product_category" name="product_category" placeholder="e.g., Bread, Cake, Pastry">
+                            <label for="product_category_id">Category (optional)</label>
+                            <select id="product_category_id" name="product_category_id">
+                                <option value="">Select a category</option>
+                                <?php foreach ($categories as $category): ?>
+                                    <option value="<?php echo (int)$category['id']; ?>"><?php echo htmlspecialchars($category['name']); ?></option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
                         <div class="form-group">
                             <label for="product_price">Price (₱)</label>
@@ -544,7 +550,7 @@ if ($notificationAction === 'mark_read' && isset($_GET['notification_id'])) {
                                     <td>#<?php echo (int)$p['id']; ?></td>
                                     <td><?php echo htmlspecialchars($p['name']); ?></td>
                                     <td>₱<?php echo number_format((float)$p['price'], 2); ?></td>
-                                    <td><?php echo htmlspecialchars($p['category'] ?? ''); ?></td>
+                                    <td><?php echo htmlspecialchars($p['category_name'] ?? ''); ?></td>
                                     <td><?php echo htmlspecialchars($p['badge'] ?? ''); ?></td>
                                     <td><?php echo !empty($p['is_active']) ? 'Visible' : 'Hidden'; ?></td>
                                     <td>
@@ -553,7 +559,12 @@ if ($notificationAction === 'mark_read' && isset($_GET['notification_id'])) {
                                             <input type="hidden" name="id" value="<?php echo (int)$p['id']; ?>">
                                             <input type="text" name="name" value="<?php echo htmlspecialchars($p['name']); ?>" placeholder="Name" required>
                                             <input type="number" step="0.01" min="0" name="price" value="<?php echo htmlspecialchars($p['price']); ?>" placeholder="Price" required>
-                                            <input type="text" name="category" value="<?php echo htmlspecialchars($p['category'] ?? ''); ?>" placeholder="Category">
+                                            <select name="category_id" style="min-width:120px;">
+                                                <option value="">No category</option>
+                                                <?php foreach ($categories as $category): ?>
+                                                    <option value="<?php echo (int)$category['id']; ?>" <?php echo ($p['category_id'] == $category['id']) ? 'selected' : ''; ?>><?php echo htmlspecialchars($category['name']); ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
                                             <input type="text" name="badge" value="<?php echo htmlspecialchars($p['badge'] ?? ''); ?>" placeholder="Badge">
                                             <input type="text" name="image" value="<?php echo htmlspecialchars($p['image'] ?? ''); ?>" placeholder="Image path">
                                             <input type="hidden" name="description" value="<?php echo htmlspecialchars($p['description'] ?? ''); ?>">
