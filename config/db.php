@@ -89,9 +89,9 @@ function ensureTables(): void {
         // Column or constraint may already exist, ignore error
     }
 
-    // Add archive functionality
+    // Add quantity functionality
     try {
-        $pdo->exec("ALTER TABLE products ADD COLUMN is_archived TINYINT(1) NOT NULL DEFAULT 0 AFTER is_active");
+        $pdo->exec("ALTER TABLE products ADD COLUMN quantity INT UNSIGNED NOT NULL DEFAULT 0 AFTER price");
     } catch (PDOException $e) {
         // Column may already exist, ignore error
     }
@@ -154,6 +154,7 @@ function ensureTables(): void {
         name VARCHAR(200) NOT NULL,
         description TEXT NULL,
         price DECIMAL(10,2) NOT NULL,
+        quantity INT UNSIGNED NOT NULL DEFAULT 0,
         image VARCHAR(255) NULL,
         category_id BIGINT UNSIGNED NULL,
         badge VARCHAR(60) NULL,

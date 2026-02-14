@@ -84,6 +84,7 @@ try {
     if ($productAction === 'create' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $name = trim($_POST['product_name'] ?? '');
         $price = (float)($_POST['product_price'] ?? 0);
+        $quantity = (int)($_POST['product_quantity'] ?? 0);
         $description = trim($_POST['product_description'] ?? '');
         $image = trim($_POST['product_image'] ?? '');
         $categoryId = !empty($_POST['product_category_id']) ? (int)($_POST['product_category_id']) : null;
@@ -93,7 +94,7 @@ try {
         if ($name === '' || $price <= 0) {
             $productMessage = 'Please provide a valid product name and price.';
         } else {
-            createProduct($name, $price, $description ?: null, $image ?: null, $categoryId, $badge ?: null, $isActive);
+            createProduct($name, $price, $description ?: null, $image ?: null, $categoryId, $badge ?: null, $isActive, $quantity);
             // Notify admin of new product
             notifyAdminOfNewProduct($name);
             $productMessage = 'Product created.';
@@ -107,6 +108,7 @@ try {
         $categoryId = !empty($_POST['category_id']) ? (int)($_POST['category_id']) : null;
         $badge = trim($_POST['badge'] ?? '');
         $isActive = isset($_POST['is_active']);
+        $quantity = (int)($_POST['quantity'] ?? 0);
 
         // Get old product name before update
         $oldProduct = null;
@@ -120,16 +122,17 @@ try {
         if ($id <= 0 || $name === '' || $price <= 0) {
             $productMessage = 'Please provide valid product details.';
         } else {
-            updateProduct($id, $name, $price, $description ?: null, $image ?: null, $categoryId, $badge ?: null, $isActive);
+            updateProduct($id, $name, $price, $description, $image, $categoryId, $badge, $isActive, $quantity);
             // Notify admin of product update
             notifyAdminOfProductUpdate($name);
             $productMessage = 'Product updated.';
         }
-    } elseif ($productAction === 'delete' && isset($_GET['product_id'])) {
+    } elseif ($productAction === 'archive' && isset($_GET['product_id'])) {
         $id = (int)($_GET['product_id'] ?? 0);
-        // Get product name before archiving
+        // Get product name before archiving - need to get from all products including active ones
         $productName = '';
-        foreach ($products as $p) {
+        $allProductsForArchive = getAllProducts(); // This gets active products before archiving
+        foreach ($allProductsForArchive as $p) {
             if ((int)$p['id'] === $id) {
                 $productName = $p['name'];
                 break;
@@ -145,9 +148,10 @@ try {
         }
     } elseif ($productAction === 'unarchive' && isset($_GET['product_id'])) {
         $id = (int)($_GET['product_id'] ?? 0);
-        // Get product name before unarchiving
+        // Get product name before unarchiving - need to get from archived products
         $productName = '';
-        foreach ($products as $p) {
+        $archivedProductsForRestore = getArchivedProducts();
+        foreach ($archivedProductsForRestore as $p) {
             if ((int)$p['id'] === $id) {
                 $productName = $p['name'];
                 break;
@@ -160,6 +164,33 @@ try {
                 createNotification('product_restored', 'Product Restored!', "Product '{$productName}' has been restored and is now visible in the storefront.");
             }
             $productMessage = 'Product restored to active catalog.';
+        }
+    } elseif ($productAction === 'delete' && isset($_GET['product_id'])) {
+        $id = (int)($_GET['product_id'] ?? 0);
+        // Get product name before deletion - need to get from active products
+        $productName = '';
+        $allProductsForDelete = getAllProducts();
+        foreach ($allProductsForDelete as $p) {
+            if ((int)$p['id'] === $id) {
+                $productName = $p['name'];
+                break;
+            }
+        }
+        if ($id > 0) {
+            // Permanently delete the product
+            $pdo = getPDO();
+            $stmt = $pdo->prepare('DELETE FROM products WHERE id = ?');
+            $result = $stmt->execute([$id]);
+            
+            if ($result) {
+                // Notify admin of product deletion
+                if ($productName) {
+                    createNotification('product_deleted', 'Product Deleted!', "Product '{$productName}' has been permanently deleted from the system.");
+                }
+                $productMessage = 'Product permanently deleted.';
+            } else {
+                $productMessage = 'Failed to delete product.';
+            }
         }
     }
 } catch (Throwable $e) {
@@ -530,6 +561,10 @@ if ($notificationAction === 'mark_read' && isset($_GET['notification_id'])) {
                             <input type="number" step="0.01" min="0" id="product_price" name="product_price" required>
                         </div>
                         <div class="form-group">
+                            <label for="product_quantity">Quantity</label>
+                            <input type="number" min="0" id="product_quantity" name="product_quantity" required placeholder="0">
+                        </div>
+                        <div class="form-group">
                             <label for="product_image">Image path</label>
                             <input type="text" id="product_image" name="product_image" placeholder="assets/images/example.jpg">
                         </div>
@@ -558,6 +593,7 @@ if ($notificationAction === 'mark_read' && isset($_GET['notification_id'])) {
                                     <th>ID</th>
                                     <th>Name</th>
                                     <th>Price</th>
+                                    <th>Quantity</th>
                                     <th>Category</th>
                                     <th>Badge</th>
                                     <th>Status</th>
@@ -570,31 +606,22 @@ if ($notificationAction === 'mark_read' && isset($_GET['notification_id'])) {
                                     <td>#<?php echo (int)$p['id']; ?></td>
                                     <td><?php echo htmlspecialchars($p['name']); ?></td>
                                     <td>₱<?php echo number_format((float)$p['price'], 2); ?></td>
+                                    <td><?php echo (int)$p['quantity']; ?></td>
                                     <td><?php echo htmlspecialchars($p['category_name'] ?? ''); ?></td>
                                     <td><?php echo htmlspecialchars($p['badge'] ?? ''); ?></td>
                                     <td><?php echo !empty($p['is_active']) ? 'Visible' : 'Hidden'; ?></td>
                                     <td>
-                                        <form method="POST" action="admin.php#products" class="admin-inline-form">
-                                            <input type="hidden" name="product_action" value="update">
-                                            <input type="hidden" name="id" value="<?php echo (int)$p['id']; ?>">
-                                            <input type="text" name="name" value="<?php echo htmlspecialchars($p['name']); ?>" placeholder="Name" required>
-                                            <input type="number" step="0.01" min="0" name="price" value="<?php echo htmlspecialchars($p['price']); ?>" placeholder="Price" required>
-                                            <select name="category_id" style="min-width:120px;">
-                                                <option value="">No category</option>
-                                                <?php foreach ($categories as $category): ?>
-                                                    <option value="<?php echo (int)$category['id']; ?>" <?php echo ($p['category_id'] == $category['id']) ? 'selected' : ''; ?>><?php echo htmlspecialchars($category['name']); ?></option>
-                                                <?php endforeach; ?>
-                                            </select>
-                                            <input type="text" name="badge" value="<?php echo htmlspecialchars($p['badge'] ?? ''); ?>" placeholder="Badge">
-                                            <input type="text" name="image" value="<?php echo htmlspecialchars($p['image'] ?? ''); ?>" placeholder="Image path">
-                                            <input type="hidden" name="description" value="<?php echo htmlspecialchars($p['description'] ?? ''); ?>">
-                                            <label style="display:flex;align-items:center;gap:4px;font-size:0.8rem;">
-                                                <input type="checkbox" name="is_active" <?php echo !empty($p['is_active']) ? 'checked' : ''; ?>>
-                                                Visible
-                                            </label>
-                                            <button type="submit" class="btn btn-sm">Save</button>
-                                        </form>
-                                        <a href="admin.php?product_action=archive&product_id=<?php echo (int)$p['id']; ?>#products" class="btn btn-outline btn-sm admin-archive" onclick="return confirm('Archive this product? You can restore it later from the archive section.');">Archive</a>
+                                        <div class="action-buttons">
+                                            <button type="button" class="btn btn-sm btn-edit" onclick="editProduct(<?php echo (int)$p['id']; ?>, '<?php echo htmlspecialchars($p['name'], ENT_QUOTES); ?>', <?php echo (float)$p['price']; ?>, '<?php echo htmlspecialchars($p['category_id'] ?? '', ENT_QUOTES); ?>', '<?php echo htmlspecialchars($p['image'] ?? '', ENT_QUOTES); ?>', '<?php echo htmlspecialchars($p['description'] ?? '', ENT_QUOTES); ?>', '<?php echo htmlspecialchars($p['badge'] ?? '', ENT_QUOTES); ?>', <?php echo !empty($p['is_active']) ? 'true' : 'false'; ?>, <?php echo (int)($p['quantity'] ?? 0); ?>)">
+                                                <i class="fas fa-edit"></i> Edit
+                                            </button>
+                                            <a href="admin.php?product_action=archive&product_id=<?php echo (int)$p['id']; ?>#products" class="btn btn-outline btn-sm admin-archive" onclick="return confirm('Archive this product? You can restore it later from the archive section.');">
+                                                <i class="fas fa-archive"></i> Archive
+                                            </a>
+                                            <a href="admin.php?product_action=delete&product_id=<?php echo (int)$p['id']; ?>#products" class="btn btn-outline btn-sm btn-delete" onclick="return confirm('PERMANENTLY delete this product? This action cannot be undone and will remove all data permanently.');">
+                                                <i class="fas fa-trash"></i> Delete
+                                            </a>
+                                        </div>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -604,6 +631,74 @@ if ($notificationAction === 'mark_read' && isset($_GET['notification_id'])) {
                 </div>
             </div>
         </section>
+
+        <!-- Edit Product Modal -->
+        <div id="editProductModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Edit Product</h3>
+                    <button type="button" class="modal-close" onclick="closeEditModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form method="POST" action="admin.php#products" class="admin-form" id="editProductForm">
+                        <input type="hidden" name="product_action" value="update">
+                        <input type="hidden" id="editProductId" name="id">
+                        
+                        <div class="form-group">
+                            <label for="editName">Product Name</label>
+                            <input type="text" id="editName" name="name" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="editPrice">Price (₱)</label>
+                            <input type="number" step="0.01" min="0" id="editPrice" name="price" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="editQuantity">Quantity</label>
+                            <input type="number" min="0" id="editQuantity" name="quantity" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="editCategory">Category</label>
+                            <select id="editCategory" name="category_id">
+                                <option value="">No category</option>
+                                <?php foreach ($categories as $category): ?>
+                                    <option value="<?php echo (int)$category['id']; ?>"><?php echo htmlspecialchars($category['name']); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="editImage">Image path</label>
+                            <input type="text" id="editImage" name="image" placeholder="assets/images/example.jpg">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="editDescription">Description</label>
+                            <textarea id="editDescription" name="description" rows="4" placeholder="Enter product description..."></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="editBadge">Badge (optional)</label>
+                            <input type="text" id="editBadge" name="badge" placeholder="e.g., New, Bestseller">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="editActive" name="is_active">
+                                <span class="checkmark"></span>
+                                Show in storefront
+                            </label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeEditModal()">Cancel</button>
+                    <button type="submit" form="editProductForm" class="btn btn-primary">Save Changes</button>
+                </div>
+            </div>
+        </div>
 
         <section class="admin-section" id="archive">
             <div class="admin-dashboard__header">
@@ -743,5 +838,61 @@ if ($notificationAction === 'mark_read' && isset($_GET['notification_id'])) {
     </main>
 </div>
 <script src="assets/js/script.js"></script>
+
+<script>
+// Product Edit Modal Functions
+function editProduct(id, name, price, categoryId, image, description, badge, isActive, quantity) {
+    // Populate the modal with product data
+    document.getElementById('editProductId').value = id;
+    document.getElementById('editName').value = name;
+    document.getElementById('editPrice').value = price;
+    document.getElementById('editQuantity').value = quantity || 0;
+    document.getElementById('editCategory').value = categoryId || '';
+    document.getElementById('editImage').value = image || '';
+    document.getElementById('editDescription').value = description || '';
+    document.getElementById('editBadge').value = badge || '';
+    document.getElementById('editActive').checked = isActive;
+    
+    // Show the modal
+    const modal = document.getElementById('editProductModal');
+    modal.style.display = 'flex';
+    modal.classList.add('show');
+    document.body.style.overflow = 'hidden'; // Prevent background scrolling
+}
+
+function closeEditModal() {
+    // Hide the modal
+    const modal = document.getElementById('editProductModal');
+    modal.classList.remove('show');
+    
+    // Wait for animation to complete before hiding
+    setTimeout(() => {
+        modal.style.display = 'none';
+    }, 300);
+    
+    document.body.style.overflow = 'auto'; // Restore background scrolling
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('editProductModal');
+    if (event.target === modal) {
+        closeEditModal();
+    }
+}
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeEditModal();
+    }
+});
+
+// Form submission handler
+document.getElementById('editProductForm').addEventListener('submit', function(e) {
+    // Let the form submit normally
+    closeEditModal();
+});
+</script>
 </body>
 </html>

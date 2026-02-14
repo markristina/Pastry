@@ -8,101 +8,148 @@ require_once __DIR__ . '/config/db.php';
 function defaultProductSeed(): array {
     return [
         [
-            'id' => 'tableya_sea_salt_croissant',
+            'slug' => 'tableya-sea-salt-croissant',
             'name' => 'Tableya Sea Salt Croissant',
             'description' => 'Flaky layers filled with dark tableya ganache, finished with Maldon sea salt.',
             'price' => 85.00,
+            'quantity' => 50,
             'image' => 'assets/images/10.jpg',
-            'category' => 'croissants'
+            'category' => 'croissants',
+            'badge' => 'Bestseller',
+            'is_active' => 1,
         ],
         [
-            'id' => 'calamansi_honey_cheesecake',
+            'slug' => 'calamansi-honey-cheesecake',
             'name' => 'Calamansi Honey Cheesecake',
-            'description' => 'Silky baked cheesecake brightened with calamansi curd and wildflower honey drizzle.',
+            'description' => 'Silky cream cheese infused with calamansi zest, topped with local honey.',
             'price' => 120.00,
-            'image' => 'assets/images/11.webp',
-            'category' => 'cakes'
+            'quantity' => 30,
+            'image' => 'assets/images/11.jpg',
+            'category' => 'cakes',
+            'badge' => 'New',
+            'is_active' => 1,
         ],
         [
-            'id' => 'coconut_dulce_ensaymada',
+            'slug' => 'coconut-dulce-ensaymada',
             'name' => 'Coconut Dulce Ensaymada',
-            'description' => 'Pillowy brioche swirl topped with muscovado butter, coconut flakes, and queso de bola.',
-            'price' => 95.00,
-            'image' => 'assets/images/12.webp',
-            'category' => 'filipino-delights'
+            'description' => 'Soft brioche buns with coconut dulce de leche frosting and toasted coconut flakes.',
+            'price' => 45.00,
+            'quantity' => 75,
+            'image' => 'assets/images/12.jpg',
+            'category' => 'filipino-delights',
+            'badge' => null,
+            'is_active' => 1,
         ],
         [
-            'id' => 'classic_croissant',
+            'slug' => 'classic-croissant',
             'name' => 'Classic Croissant',
-            'description' => 'Buttery, flaky, and golden brown. The perfect start to your morning.',
+            'description' => 'Buttery, flaky croissant baked to golden perfection.',
             'price' => 65.00,
-            'image' => 'assets/images/1.jpg',
-            'category' => 'croissants'
+            'quantity' => 60,
+            'image' => 'assets/images/13.jpg',
+            'category' => 'croissants',
+            'badge' => null,
+            'is_active' => 1,
         ],
         [
-            'id' => 'berry_danishes',
+            'slug' => 'berry-danishes',
             'name' => 'Berry Danishes',
-            'description' => 'Sweet pastry filled with fresh vanilla custard and topped with seasonal berries.',
-            'price' => 85.00,
-            'image' => 'assets/images/2..jpg',
-            'category' => 'pastries'
-        ],
-        [
-            'id' => 'chocolate_eclair',
-            'name' => 'Chocolate Eclair',
-            'description' => 'Choux pastry filled with rich chocolate cream and topped with chocolate ganache.',
+            'description' => 'Light pastry with mixed berries and cream cheese filling.',
             'price' => 75.00,
-            'image' => 'assets/images/3..avif',
-            'category' => 'pastries'
+            'quantity' => 40,
+            'image' => 'assets/images/14.jpg',
+            'category' => 'pastries',
+            'badge' => null,
+            'is_active' => 1,
         ],
         [
-            'id' => 'pain_au_chocolat',
-            'name' => 'Pain au Chocolat',
-            'description' => 'Flaky laminated dough wrapped around bars of dark chocolate.',
-            'price' => 70.00,
-            'image' => 'assets/images/4..webp',
-            'category' => 'croissants'
-        ],
-        [
-            'id' => 'almond_tart',
-            'name' => 'Almond Tart',
-            'description' => 'Buttery tart crust filled with frangipane and toasted almond flakes.',
-            'price' => 95.00,
-            'image' => 'assets/images/5.jpg',
-            'category' => 'tarts'
-        ],
-        [
-            'id' => 'red_velvet_cupcake',
-            'name' => 'Red Velvet Cupcake',
-            'description' => 'Moist red velvet sponge topped with silky cream cheese frosting.',
-            'price' => 60.00,
-            'image' => 'assets/images/6.jpg',
-            'category' => 'cakes'
-        ],
-        [
-            'id' => 'ube_cheese_pandesal',
-            'name' => 'Ube Cheese Pandesal',
-            'description' => 'Soft purple yam pandesal filled with melty cheese—sweet, savory, and comforting.',
-            'price' => 40.00,
-            'image' => 'assets/images/7p.jpg',
-            'category' => 'filipino-delights'
-        ],
-        [
-            'id' => 'mango_basil_tart',
-            'name' => 'Mango Basil Tart',
-            'description' => 'Buttery tart shell layered with mango curd and a bright basil-sugar finish.',
-            'price' => 110.00,
-            'image' => 'assets/images/8.webp',
-            'category' => 'tarts'
-        ],
-        [
-            'id' => 'dark_choco_banana_bread',
-            'name' => 'Dark Choco Banana Bread',
-            'description' => 'Moist banana loaf with cacao chunks and toasted walnuts—perfect with coffee.',
+            'slug' => 'chocolate-eclair',
+            'name' => 'Chocolate Eclair',
+            'description' => 'Choux pastry filled with vanilla cream and topped with rich chocolate glaze.',
             'price' => 80.00,
-            'image' => 'assets/images/9.jpg',
-            'category' => 'breads'
-        ]
+            'quantity' => 35,
+            'image' => 'assets/images/15.jpg',
+            'category' => 'pastries',
+            'badge' => null,
+            'is_active' => 1,
+        ],
+        [
+            'slug' => 'pain-au-chocolat',
+            'name' => 'Pain au Chocolat',
+            'description' => 'Classic French pastry with dark chocolate batons.',
+            'price' => 70.00,
+            'quantity' => 55,
+            'image' => 'assets/images/16.jpg',
+            'category' => 'croissants',
+            'badge' => null,
+            'is_active' => 1,
+        ],
+        [
+            'slug' => 'almond-tart',
+            'name' => 'Almond Tart',
+            'description' => 'Buttery tart shell with frangipane almond filling and sliced almonds.',
+            'price' => 95.00,
+            'quantity' => 25,
+            'image' => 'assets/images/17.jpg',
+            'category' => 'tarts',
+            'badge' => null,
+            'is_active' => 1,
+        ],
+        [
+            'slug' => 'red-velvet-cupcake',
+            'name' => 'Red Velvet Cupcake',
+            'description' => 'Moist red velvet cake with cream cheese frosting.',
+            'price' => 55.00,
+            'quantity' => 45,
+            'image' => 'assets/images/18.jpg',
+            'category' => 'cakes',
+            'badge' => null,
+            'is_active' => 1,
+        ],
+        [
+            'slug' => 'ube-cheese-pandesal',
+            'name' => 'Ube Cheese Pandesal',
+            'description' => 'Filipino bread with ube filling and cheese topping.',
+            'price' => 35.00,
+            'quantity' => 80,
+            'image' => 'assets/images/19.jpg',
+            'category' => 'filipino-delights',
+            'badge' => null,
+            'is_active' => 1,
+        ],
+        [
+            'slug' => 'mango-basil-tart',
+            'name' => 'Mango Basil Tart',
+            'description' => 'Fresh mango with basil-infused custard in a buttery tart shell.',
+            'price' => 110.00,
+            'quantity' => 20,
+            'image' => 'assets/images/20.jpg',
+            'category' => 'tarts',
+            'badge' => 'Seasonal',
+            'is_active' => 1,
+        ],
+        [
+            'slug' => 'dark-choco-banana-bread',
+            'name' => 'Dark Choco Banana Bread',
+            'description' => 'Moist banana bread with dark chocolate chunks and walnuts.',
+            'price' => 60.00,
+            'quantity' => 50,
+            'image' => 'assets/images/21.jpg',
+            'category' => 'breads',
+            'badge' => null,
+            'is_active' => 1,
+        ],
+        [
+            'slug' => 'pandesal',
+            'name' => 'Pandesal',
+            'description' => 'Classic Filipino bread rolls, slightly sweet and perfect for breakfast.',
+            'price' => 25.00,
+            'quantity' => 100,
+            'image' => 'assets/images/22.jpg',
+            'category' => 'filipino-delights',
+            'badge' => null,
+            'is_active' => 1,
+        ],
     ];
 }
 
@@ -116,7 +163,7 @@ function ensureProductsSeeded(): void {
     foreach ($seed as $p) {
         // Check if product already exists
         $stmt = $pdo->prepare('SELECT id FROM products WHERE slug = ?');
-        $stmt->execute([$p['id']]);
+        $stmt->execute([$p['slug']]);
         $existing = $stmt->fetch();
         
         // Get category ID from category slug
@@ -132,27 +179,29 @@ function ensureProductsSeeded(): void {
         
         if ($existing) {
             // Update existing product with new image and other details
-            $update = $pdo->prepare('UPDATE products SET name = ?, description = ?, price = ?, image = ?, category_id = ?, badge = ? WHERE slug = ?');
+            $update = $pdo->prepare('UPDATE products SET name = ?, description = ?, price = ?, quantity = ?, image = ?, category_id = ?, badge = ? WHERE slug = ?');
             $update->execute([
                 $p['name'],
                 $p['description'],
                 $p['price'],
+                $p['quantity'],
                 $p['image'],
                 $categoryId,
-                null,
-                $p['id'],
+                $p['badge'],
+                $p['slug'],
             ]);
         } else {
             // Insert new product
-            $insert = $pdo->prepare('INSERT INTO products (slug, name, description, price, image, category_id, badge, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, 1)');
+            $insert = $pdo->prepare('INSERT INTO products (slug, name, description, price, quantity, image, category_id, badge, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)');
             $insert->execute([
-                $p['id'],
+                $p['slug'],
                 $p['name'],
                 $p['description'],
                 $p['price'],
+                $p['quantity'],
                 $p['image'],
                 $categoryId,
-                null,
+                $p['badge'],
             ]);
         }
     }
@@ -161,14 +210,14 @@ function ensureProductsSeeded(): void {
 function getFeaturedProducts(): array {
     ensureProductsSeeded();
     $pdo = getPDO();
-    $stmt = $pdo->query('SELECT p.slug AS id, p.name, p.description, p.price, p.image, c.name as category_name, c.icon as category_icon FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.is_active = 1 AND p.is_archived = 0 ORDER BY p.created_at DESC');
+    $stmt = $pdo->query('SELECT p.slug AS id, p.name, p.description, p.price, p.quantity, p.image, c.name as category_name, c.icon as category_icon FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.is_active = 1 AND p.is_archived = 0 ORDER BY p.created_at DESC');
     return $stmt->fetchAll();
 }
 
 function findProductById(string $id): ?array {
     ensureProductsSeeded();
     $pdo = getPDO();
-    $stmt = $pdo->prepare('SELECT p.slug AS id, p.name, p.description, p.price, p.image, p.category_id, c.name as category_name, c.icon as category_icon, p.badge, p.is_active FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.slug = ? LIMIT 1');
+    $stmt = $pdo->prepare('SELECT p.slug AS id, p.name, p.description, p.price, p.quantity, p.image, p.category_id, c.name as category_name, c.icon as category_icon, p.badge, p.is_active FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.slug = ? LIMIT 1');
     $stmt->execute([$id]);
     $row = $stmt->fetch();
     return $row ?: null;
@@ -202,16 +251,17 @@ function generateProductSlug(string $name): string {
     }
 }
 
-function createProduct(string $name, float $price, ?string $description, ?string $image, ?int $categoryId, ?string $badge, bool $isActive = true): string {
+function createProduct(string $name, float $price, ?string $description, ?string $image, ?int $categoryId, ?string $badge, bool $isActive = true, int $quantity = 0): string {
     ensureTables();
     $pdo = getPDO();
     $slug = generateProductSlug($name);
-    $stmt = $pdo->prepare('INSERT INTO products (slug, name, description, price, image, category_id, badge, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+    $stmt = $pdo->prepare('INSERT INTO products (slug, name, description, price, quantity, image, category_id, badge, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
     $stmt->execute([
         $slug,
         $name,
         $description,
         $price,
+        $quantity,
         $image,
         $categoryId,
         $badge,
@@ -220,10 +270,10 @@ function createProduct(string $name, float $price, ?string $description, ?string
     return $slug;
 }
 
-function updateProduct(int $id, string $name, float $price, ?string $description, ?string $image, ?int $categoryId, ?string $badge, bool $isActive): bool {
+function updateProduct(int $id, string $name, float $price, ?string $description, ?string $image, ?int $categoryId, ?string $badge, bool $isActive, int $quantity): bool {
     ensureTables();
     $pdo = getPDO();
-    $stmt = $pdo->prepare('UPDATE products SET name = ?, price = ?, description = ?, image = ?, category_id = ?, badge = ?, is_active = ? WHERE id = ?');
+    $stmt = $pdo->prepare('UPDATE products SET name = ?, price = ?, description = ?, image = ?, category_id = ?, badge = ?, is_active = ?, quantity = ? WHERE id = ?');
     return $stmt->execute([
         $name,
         $price,
@@ -232,6 +282,7 @@ function updateProduct(int $id, string $name, float $price, ?string $description
         $categoryId,
         $badge,
         $isActive ? 1 : 0,
+        $quantity,
         $id,
     ]);
 }
