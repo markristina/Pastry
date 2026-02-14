@@ -2369,6 +2369,19 @@ body.auth-page::after {
     padding: 6px 16px;
 }
 
+.admin-archive {
+    border-radius: 999px;
+    padding: 6px 16px;
+    border-color: #FF9800;
+    color: #FF9800;
+}
+
+.admin-archive:hover {
+    background: #FF9800;
+    color: white;
+    border-color: #FF9800;
+}
+
 .role-pill {
     display: inline-flex;
     align-items: center;

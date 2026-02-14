@@ -89,6 +89,13 @@ function ensureTables(): void {
         // Column or constraint may already exist, ignore error
     }
 
+    // Add archive functionality
+    try {
+        $pdo->exec("ALTER TABLE products ADD COLUMN is_archived TINYINT(1) NOT NULL DEFAULT 0 AFTER is_active");
+    } catch (PDOException $e) {
+        // Column may already exist, ignore error
+    }
+
     // Migrate existing category data if needed
     try {
         // Check if old category column exists and has data
@@ -151,6 +158,7 @@ function ensureTables(): void {
         category_id BIGINT UNSIGNED NULL,
         badge VARCHAR(60) NULL,
         is_active TINYINT(1) NOT NULL DEFAULT 1,
+        is_archived TINYINT(1) NOT NULL DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     SQL);
@@ -316,7 +324,7 @@ function ensureNotificationTable(): void {
     $pdo->exec(<<<SQL
     CREATE TABLE IF NOT EXISTS notifications (
         id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-        type ENUM('new_order', 'product_added', 'product_updated', 'product_deleted', 'new_user') NOT NULL,
+        type ENUM('new_order', 'product_added', 'product_updated', 'product_deleted', 'product_archived', 'product_restored', 'new_user') NOT NULL,
         title VARCHAR(200) NOT NULL,
         message TEXT NOT NULL,
         reference_id VARCHAR(100) NULL,
@@ -494,7 +502,39 @@ function deleteCategory(int $id): bool {
 // Get products by category
 function getProductsByCategory(int $categoryId): array {
     $pdo = getPDO();
-    $stmt = $pdo->prepare('SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.category_id = ? AND p.is_active = 1 ORDER BY p.created_at DESC');
+    $stmt = $pdo->prepare('SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.category_id = ? AND p.is_active = 1 AND p.is_archived = 0 ORDER BY p.created_at DESC');
     $stmt->execute([$categoryId]);
+    return $stmt->fetchAll();
+}
+
+// ========================
+// Archive Management
+// ========================
+
+// Archive a product (hide from storefront but keep in database)
+function archiveProduct(int $id): bool {
+    $pdo = getPDO();
+    $stmt = $pdo->prepare('UPDATE products SET is_archived = 1, is_active = 0 WHERE id = ?');
+    return $stmt->execute([$id]);
+}
+
+// Unarchive a product (restore to storefront)
+function unarchiveProduct(int $id): bool {
+    $pdo = getPDO();
+    $stmt = $pdo->prepare('UPDATE products SET is_archived = 0, is_active = 1 WHERE id = ?');
+    return $stmt->execute([$id]);
+}
+
+// Get all archived products
+function getArchivedProducts(): array {
+    $pdo = getPDO();
+    $stmt = $pdo->query('SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.is_archived = 1 ORDER BY p.created_at DESC');
+    return $stmt->fetchAll();
+}
+
+// Get active (non-archived) products for admin
+function getActiveProducts(): array {
+    $pdo = getPDO();
+    $stmt = $pdo->query('SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.is_archived = 0 ORDER BY p.created_at DESC');
     return $stmt->fetchAll();
 }

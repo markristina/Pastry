@@ -127,7 +127,7 @@ try {
         }
     } elseif ($productAction === 'delete' && isset($_GET['product_id'])) {
         $id = (int)($_GET['product_id'] ?? 0);
-        // Get product name before deletion
+        // Get product name before archiving
         $productName = '';
         foreach ($products as $p) {
             if ((int)$p['id'] === $id) {
@@ -136,12 +136,30 @@ try {
             }
         }
         if ($id > 0) {
-            deleteProduct($id);
-            // Notify admin of product deletion
+            archiveProduct($id);
+            // Notify admin of product archiving
             if ($productName) {
-                notifyAdminOfProductDeletion($productName);
+                createNotification('product_archived', 'Product Archived!', "Product '{$productName}' has been archived and is no longer visible in the storefront.");
             }
-            $productMessage = 'Product deleted.';
+            $productMessage = 'Product archived. You can restore it from the archive section.';
+        }
+    } elseif ($productAction === 'unarchive' && isset($_GET['product_id'])) {
+        $id = (int)($_GET['product_id'] ?? 0);
+        // Get product name before unarchiving
+        $productName = '';
+        foreach ($products as $p) {
+            if ((int)$p['id'] === $id) {
+                $productName = $p['name'];
+                break;
+            }
+        }
+        if ($id > 0) {
+            unarchiveProduct($id);
+            // Notify admin of product restoration
+            if ($productName) {
+                createNotification('product_restored', 'Product Restored!', "Product '{$productName}' has been restored and is now visible in the storefront.");
+            }
+            $productMessage = 'Product restored to active catalog.';
         }
     }
 } catch (Throwable $e) {
@@ -150,6 +168,7 @@ try {
 
 $products = getAllProducts();
 $categories = getAllCategories();
+$archivedProducts = getArchivedProducts();
 
 // Simple dashboard metrics
 $totalOrders = count($orders);
@@ -230,9 +249,10 @@ if ($notificationAction === 'mark_read' && isset($_GET['notification_id'])) {
             <a href="#dashboard" class="active"><i class="fa-solid fa-house"></i><span>Dashboard</span></a>
             <a href="#orders"><i class="fa-solid fa-receipt"></i><span>Orders</span></a>
             <a href="#products"><i class="fa-solid fa-bread-slice"></i><span>Products</span></a>
+            <a href="#archive"><i class="fa-solid fa-archive"></i><span>Archive</span></a>
             <a href="#users"><i class="fa-solid fa-users"></i><span>Users</span></a>
-            <a href="index.php" target="_blank"><i class="fa-solid fa-store"></i><span>View Storefront</span></a>
         </nav>
+        <a href="index.php" target="_blank"><i class="fa-solid fa-store"></i><span>View Storefront</span></a>
         <div class="admin-sidebar__footer">
             <a href="profile.php"><i class="fa-regular fa-user"></i><span>Account</span></a>
             <a href="logout.php"><i class="fa-solid fa-right-from-bracket"></i><span>Logout</span></a>
@@ -574,7 +594,7 @@ if ($notificationAction === 'mark_read' && isset($_GET['notification_id'])) {
                                             </label>
                                             <button type="submit" class="btn btn-sm">Save</button>
                                         </form>
-                                        <a href="admin.php?product_action=delete&product_id=<?php echo (int)$p['id']; ?>#products" class="btn btn-outline btn-sm admin-delete" onclick="return confirm('Delete this product?');">Delete</a>
+                                        <a href="admin.php?product_action=archive&product_id=<?php echo (int)$p['id']; ?>#products" class="btn btn-outline btn-sm admin-archive" onclick="return confirm('Archive this product? You can restore it later from the archive section.');">Archive</a>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -582,6 +602,63 @@ if ($notificationAction === 'mark_read' && isset($_GET['notification_id'])) {
                         </table>
                     </div>
                 </div>
+            </div>
+        </section>
+
+        <section class="admin-section" id="archive">
+            <div class="admin-dashboard__header">
+                <div>
+                    <p class="section-eyebrow">Archive</p>
+                    <h2>Archived Products</h2>
+                    <p style="color: #666; font-size: 0.9rem; margin-top: 0.5rem;">Products that have been archived but can be restored later</p>
+                </div>
+            </div>
+
+            <div class="admin-card admin-card--table">
+                <?php if (empty($archivedProducts)): ?>
+                    <div style="text-align: center; padding: 3rem; color: #666;">
+                        <i class="fas fa-archive" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;"></i>
+                        <h3>No archived products</h3>
+                        <p>When you archive products, they will appear here for easy restoration.</p>
+                    </div>
+                <?php else: ?>
+                    <div class="admin-table-wrapper">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Price</th>
+                                    <th>Category</th>
+                                    <th>Archived Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            <?php foreach ($archivedProducts as $p): ?>
+                                <tr style="opacity: 0.7; background: #f9f9f9;">
+                                    <td>#<?php echo (int)$p['id']; ?></td>
+                                    <td>
+                                        <?php echo htmlspecialchars($p['name']); ?>
+                                        <br><small style="color: #999;">Archived</small>
+                                    </td>
+                                    <td>₱<?php echo number_format((float)$p['price'], 2); ?></td>
+                                    <td><?php echo htmlspecialchars($p['category_name'] ?? ''); ?></td>
+                                    <td><?php echo date('M j, Y', strtotime($p['created_at'])); ?></td>
+                                    <td>
+                                        <a href="admin.php?product_action=unarchive&product_id=<?php echo (int)$p['id']; ?>#archive" 
+                                           class="btn btn-sm btn-success" 
+                                           onclick="return confirm('Restore this product to the active catalog?');"
+                                           style="background: #4CAF50; border-color: #4CAF50; color: white;">
+                                            <i class="fas fa-undo"></i> Restore
+                                        </a>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php endif; ?>
             </div>
         </section>
 
