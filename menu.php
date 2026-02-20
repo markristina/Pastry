@@ -10,6 +10,7 @@ require_once __DIR__ . '/products.php';
 
 // Handle category filtering
 $selectedCategory = $_GET['category'] ?? null;
+$category = null;
 if ($selectedCategory) {
     $category = getCategoryBySlug($selectedCategory);
     if ($category) {
@@ -90,11 +91,11 @@ $isLoggedIn = isset($_SESSION['user']);
                 <a href="menu.php" class="category-btn <?php echo !$selectedCategory ? 'active' : ''; ?>">
                     <i class="fas fa-th"></i> All Products
                 </a>
-                <?php foreach ($categories as $category): ?>
-                    <a href="menu.php?category=<?php echo htmlspecialchars($category['slug']); ?>" 
-                       class="category-btn <?php echo ($selectedCategory === $category['slug']) ? 'active' : ''; ?>">
-                        <i class="fas <?php echo htmlspecialchars($category['icon'] ?? 'fa-tag'); ?>"></i>
-                        <?php echo htmlspecialchars($category['name']); ?>
+                <?php foreach ($categories as $cat): ?>
+                    <a href="menu.php?category=<?php echo htmlspecialchars($cat['slug']); ?>" 
+                       class="category-btn <?php echo ($selectedCategory === $cat['slug']) ? 'active' : ''; ?>">
+                        <i class="fas <?php echo htmlspecialchars($cat['icon'] ?? 'fa-tag'); ?>"></i>
+                        <?php echo htmlspecialchars($cat['name']); ?>
                     </a>
                 <?php endforeach; ?>
             </div>

@@ -71,13 +71,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'chang
 // Get user profile
 $profile = getProfileByUserId($_SESSION['user']['id']) ?: [];
 
-// Set user variables
-$userRole = $_SESSION['user']['role'] ?? 'customer';
-$userName = $_SESSION['user']['name'] ?? 'User';
-$userEmail = $_SESSION['user']['email'] ?? '';
-$userInitial = strtoupper(substr($userName, 0, 1));
-$memberSince = date('F j, Y', strtotime($_SESSION['user']['created_at'] ?? 'now'));
-
 // Get user orders
 $myOrders = $userRole === 'customer' ? getOrdersByUserId($_SESSION['user']['id']) : [];
 
@@ -107,6 +100,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
     exit;
 }
 ?>
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -121,110 +115,82 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
             position: fixed;
             top: 0;
             left: 0;
-            width: 260px;
+            width: 280px;
             height: 100vh;
-            background: #ffffff;
-            border-right: 1px solid rgba(141, 110, 99, 0.15);
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
             box-shadow: 2px 0 10px rgba(0,0,0,0.1);
             z-index: 1000;
             transition: transform 0.3s ease;
-            display: flex;
-            flex-direction: column;
-            align-self: flex-start;
         }
         
         .profile-sidebar__brand {
             padding: 20px;
-            border-bottom: 1px solid rgba(141, 110, 99, 0.15);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
             text-align: center;
         }
         
         .profile-sidebar__brand .logo {
-            font-size: 1.4rem;
-            color: var(--primary-color);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 8px;
+        }
+        
+        .profile-sidebar__brand span {
+            color: var(--white);
+            font-weight: 600;
+            font-size: 0.9rem;
         }
         
         .profile-sidebar__nav {
             padding: 20px 0;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            margin-top: 8px;
         }
         
         .profile-sidebar__nav a {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 10px 16px;
-            margin-bottom: 0;
-            border-radius: 0;
-            color: #5d4037;
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            border-radius: 12px;
+            color: var(--white);
             text-decoration: none;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            font-size: 0.95rem;
-            font-weight: 400;
-            position: relative;
-            overflow: hidden;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            font-weight: 500;
         }
         
-        .profile-sidebar__nav a i {
-            width: 20px;
-            text-align: center;
-            color: var(--accent-color);
+        .profile-sidebar__nav a:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateX(2px);
         }
         
-        .profile-sidebar__nav a::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            height: 100%;
-            width: 3px;
-            background: var(--accent-color);
-            transform: translateX(-100%);
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        .profile-sidebar__nav:hover,
         .profile-sidebar__nav a.active {
-            background: rgba(141, 110, 99, 0.08);
-            color: #3e2723;
-        }
-        
-        .profile-sidebar__nav a:hover::before,
-        .profile-sidebar__nav a.active::before {
-            transform: translateX(0);
+            background: var(--accent-color);
+            color: var(--white);
         }
         
         .profile-sidebar__footer {
             margin-top: auto;
             padding: 20px;
-            border-top: 1px solid rgba(141, 110, 99, 0.15);
+            border-top: 1px solid rgba(255,255,255,0.1);
         }
         
         .profile-sidebar__footer a {
             display: flex;
             align-items: center;
-            gap: 8px;
             padding: 8px 12px;
-            margin-bottom: 6px;
-            border-radius: 0;
-            color: #5d4037;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            color: var(--white);
             text-decoration: none;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            font-size: 0.9rem;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .profile-sidebar__footer a i {
-            color: var(--accent-color);
+            transition: all 0.3s ease;
+            font-size: 0.85rem;
         }
         
         .profile-sidebar__footer a:hover {
-            background: rgba(141, 110, 99, 0.08);
-            color: #3e2723;
+            background: rgba(255,255,255,0.2);
+            transform: translateX(2px);
         }
         
         /* Mobile menu toggle */
@@ -248,20 +214,17 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
         
         /* Main content */
         .profile-main {
-            margin-left: 260px;
-            padding: 20px;
-            background-color: #faf7f3;
-            min-height: 100vh;
+            margin-left: 320px;
+            padding: 40px;
         }
         
         .profile-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
             border-bottom: 1px solid rgba(141,110,99,0.1);
-            animation: fadeInDown 0.6s ease-out;
         }
         
         .profile-header__back {
@@ -281,48 +244,6 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
         .profile-header__actions {
             display: flex;
             gap: 12px;
-        }
-        
-        /* Welcome Header Styles */
-        .profile-header__identity {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-        
-        .profile-header__avatar {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: var(--accent-color);
-            color: var(--white);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            font-weight: 600;
-            font-family: var(--font-heading);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }
-        
-        .profile-header__content h1 {
-            color: var(--text-color);
-            font-size: 1.8rem;
-            font-weight: 700;
-            margin: 0 0 8px 0;
-            font-family: var(--font-heading);
-        }
-        
-        .profile-header__content h1 strong {
-            color: var(--accent-color);
-        }
-        
-        .profile-header__welcome {
-            color: rgba(62,39,35,0.7);
-            font-size: 1rem;
-            margin: 0;
-            line-height: 1.4;
         }
         
         .profile-header__actions .btn {
@@ -347,49 +268,45 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
         /* Profile cards */
         .profile-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
         }
         
         .profile-card {
             background: var(--white);
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            padding: 15px;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding: 24px;
+            transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
-            border: 1px solid rgba(141, 110, 99, 0.1);
         }
         
         .profile-card:hover {
-            transform: translateY(-4px) scale(1.02);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-            border-color: var(--accent-color);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
         }
         
         .profile-card__title {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-bottom: 10px;
-            padding-bottom: 10px;
+            gap: 12px;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
             border-bottom: 1px solid rgba(141,110,99,0.1);
-            font-size: 1.1rem;
-            color: var(--primary-color);
         }
         
         .profile-card__title i {
-            font-size: 1rem;
-            color: var(--accent-color);
+            font-size: 1.2rem;
+            color: var(--primary-color);
         }
         
         .profile-card__desc {
             color: rgba(62,39,35,0.7);
             font-size: 0.9rem;
             line-height: 1.4;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
         
         .profile-card__form {
@@ -435,41 +352,24 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
         .btn {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            padding: 10px 20px;
+            justify-content: center;
+            padding: 12px 24px;
             border-radius: 8px;
-            background: var(--light-bg);
-            color: var(--primary-color);
+            background: var(--primary-color);
+            color: var(--white);
             text-decoration: none;
             font-size: 0.9rem;
             font-weight: 500;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.3s ease;
             border: 1px solid var(--primary-color);
             cursor: pointer;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transition: left 0.5s;
         }
         
         .btn:hover {
             background: var(--accent-color);
-            color: var(--white);
-            transform: translateY(-2px) scale(1.05);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        }
-        
-        .btn:hover::before {
-            left: 100%;
+            color: (var(--white));
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
         }
         
         .btn-outline {
@@ -579,7 +479,6 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
             min-width: 300px;
             max-height: 400px;
             overflow-y: auto;
-            display: block; /* Always visible */
         }
         
         .profile-notification-header {
@@ -680,39 +579,6 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
                 gap: 12px;
             }
         }
-        
-        /* Animations */
-        @keyframes fadeInDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        .profile-card {
-            animation: fadeInUp 0.6s ease-out;
-            animation-fill-mode: both;
-        }
-        
-        .profile-card:nth-child(1) { animation-delay: 0.1s; }
-        .profile-card:nth-child(2) { animation-delay: 0.2s; }
-        .profile-card:nth-child(3) { animation-delay: 0.3s; }
-        .profile-card:nth-child(4) { animation-delay: 0.4s; }
     </style>
 </head>
 <body class="profile-page">
@@ -735,7 +601,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
                 <i class="fas fa-home"></i>
                 <span>Home</span>
             </a>
-            <a href="menu.php" class="nav-link">
+            <a href="menu.php" class="nav-link active">
                 <i class="fas fa-utensils"></i>
                 <span>Menu</span>
             </a>
@@ -750,8 +616,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
             <a href="cart.php" class="nav-link">
                 <i class="fas fa-shopping-cart"></i>
                 <span>Cart</span>
-                <?php if ($cartCount > 0): ?><span class="cart-badge"><?php echo (int)$cartCount; ?></span><?php endif; ?>
-            </a>
+                <?php if ($cartCount > 0): ?><span class="cart-badge"><?php echo (int)$cartCount; ?></span><?php endif; ?></a>
             <a href="profile.php" class="nav-link active">
                 <i class="fas fa-user"></i>
                 <span>Account</span>
@@ -764,12 +629,11 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
             <?php endif; ?>
         </nav>
         
-        <a href="index.php" class="footer-link" style="margin-top: auto; padding: 14px 20px; border-top: 1px solid rgba(141, 110, 99, 0.15); display: flex; align-items: center; gap: 10px; color: #5d4037; text-decoration: none; font-size: 0.95rem;">
-            <i class="fas fa-store" style="color: var(--accent-color);"></i>
-            <span>View Storefront</span>
-        </a>
-        
         <div class="profile-sidebar__footer">
+            <a href="index.php" class="footer-link">
+                <i class="fas fa-store"></i>
+                <span>View Storefront</span>
+            </a>
             <a href="profile.php" class="footer-link">
                 <i class="fa-regular fa-user"></i>
                 <span>Account</span>
@@ -839,7 +703,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
                         <?php if (!empty($profile['address'])): ?>
                             <p><strong>Address:</strong></p>
                             <p><?php echo htmlspecialchars($profile['address']); ?></p>
-                            <p><?php echo htmlspecialchars($profile['city'] ?? ''); ?>, <?php echo htmlspecialchars($profile['postal_code'] ?? ''); ?></p>
+                            <p><?php echo htmlspecialchars($profile['city']); ?>, <?php echo htmlspecialchars($profile['postal']); ?></p>
                         <?php else: ?>
                             <p><strong>Address:</strong> Not provided</p>
                         <?php endif; ?>
@@ -855,9 +719,8 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
                             <p><a href="menu.php" class="btn btn-outline">Browse Menu</a> and place your first order!</p>
                         <?php else: ?>
                             <p>You have <strong><?php echo count($myOrders); ?></strong> order<?php echo (count($myOrders) === 1) ? '' : 's'; ?></p>
-                        <?php endif; ?>
+                        </div>
                     </div>
-                </div>
 
                 <!-- Quick Actions -->
                 <div class="profile-card">
@@ -882,50 +745,8 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
 
         <!-- Notifications -->
         <section class="profile-notifications">
-            <div class="profile-notification-wrapper">
-                <button class="profile-notification-btn" id="notificationBtn">
-                    <i class="fas fa-bell"></i>
-                    <?php if ($unreadCount > 0): ?>
-                        <span class="profile-notification-badge"><?php echo (int)$unreadCount; ?></span>
-                    <?php endif; ?>
-                </button>
-                
-                <div class="profile-notification-dropdown" id="notificationDropdown">
-                    <div class="profile-notification-header">
-                        <h3>Notifications</h3>
-                        <a href="profile.php?notification_action=mark_all_read#notifications" class="btn btn-sm">Mark All Read</a>
-                    </div>
-                    <div class="profile-notification-list">
-                        <?php if (empty($recentNotifications)): ?>
-                            <div class="profile-notification-item">
-                                <p style="text-align: center; padding: 20px; color: #999;">No notifications</p>
-                            </div>
-                        <?php else: ?>
-                            <?php foreach ($recentNotifications as $notif): ?>
-                                <div class="profile-notification-item <?php echo $notif['is_read'] ? '' : 'unread'; ?>" data-id="<?php echo (int)$notif['id']; ?>">
-                                    <div class="profile-notification-icon">
-                                        <i class="fas fa-bell"></i>
-                                    </div>
-                                    <div class="profile-notification-content">
-                                        <div class="profile-notification-title"><?php echo htmlspecialchars($notif['title']); ?></div>
-                                        <div class="profile-notification-message"><?php echo htmlspecialchars($notif['message']); ?></div>
-                                        <div class="profile-notification-time"><?php echo date('M j, g:i A', strtotime($notif['created_at'])); ?></div>
-                                    </div>
-                                    <?php if (!$notif['is_read']): ?>
-                                        <a href="profile.php?notification_action=mark_read&notification_id=<?php echo (int)$notif['id']; ?>#notifications" 
-                                           class="profile-notification-read-btn">
-                                            <i class="fas fa-check"></i>
-                                        </a>
-                                    <?php endif; ?>
-                                </div>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </div>
-                </div>
-            </div>
-            
             <div class="profile-card">
-                <h2><i class="fas fa-bell"></i> Notifications Summary</h2>
+                <h2><i class="fas fa-bell"></i> Notifications</h2>
                 <div class="profile-card__desc">
                     <?php if ($unreadCount > 0): ?>
                         <p>You have <strong><?php echo $unreadCount; ?></strong> unread notification<?php echo ($unreadCount === 1 ? '' : 's'); ?></p>
@@ -956,15 +777,24 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
             }
         });
 
-        // Handle notification dropdown - always visible
+        // Handle notification dropdown
         const notificationBtn = document.getElementById('notificationBtn');
         const notificationDropdown = document.getElementById('notificationDropdown');
         
-        if (notificationDropdown) {
-            notificationDropdown.style.display = 'block'; // Always show
+        if (notificationBtn && notificationDropdown) {
+            notificationBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const dropdown = notificationDropdown;
+                dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+            });
         }
 
-        
+        // Close notification dropdown when clicking outside
+        document.addEventListener('click', function() {
+            const dropdown = document.getElementById('notificationDropdown');
+            dropdown.style.display = 'none';
+        });
+
         // Handle notification item clicks
         document.addEventListener('click', function(e) {
             const item = e.target.closest('.profile-notification-item');

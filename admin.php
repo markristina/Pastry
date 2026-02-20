@@ -278,8 +278,9 @@ if ($notificationAction === 'mark_read' && isset($_GET['notification_id'])) {
         </div>
         <nav class="admin-sidebar__nav">
             <a href="#dashboard" class="active"><i class="fa-solid fa-house"></i><span>Dashboard</span></a>
-            <a href="#orders"><i class="fa-solid fa-receipt"></i><span>Orders</span></a>
-            <a href="#products"><i class="fa-solid fa-bread-slice"></i><span>Products</span></a>
+            <a href="admin-orders.php"><i class="fa-solid fa-receipt"></i><span>Orders</span></a>
+            <a href="admin-products.php"><i class="fa-solid fa-bread-slice"></i><span>Products</span></a>
+            <a href="admin-categories.php"><i class="fa-solid fa-tags"></i><span>Categories</span></a>
             <a href="#archive"><i class="fa-solid fa-archive"></i><span>Archive</span></a>
             <a href="#users"><i class="fa-solid fa-users"></i><span>Users</span></a>
         </nav>

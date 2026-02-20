@@ -325,12 +325,30 @@ function ensureNotificationTable(): void {
     $pdo->exec(<<<SQL
     CREATE TABLE IF NOT EXISTS notifications (
         id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-        type ENUM('new_order', 'product_added', 'product_updated', 'product_deleted', 'product_archived', 'product_restored', 'new_user') NOT NULL,
-        title VARCHAR(200) NOT NULL,
+        type VARCHAR(50) NOT NULL,
+        title VARCHAR(255) NOT NULL,
         message TEXT NOT NULL,
-        reference_id VARCHAR(100) NULL,
-        is_read TINYINT(1) NOT NULL DEFAULT 0,
+        reference_id VARCHAR(50) NULL,
+        is_read BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    SQL);
+}
+
+// Create user_notifications table
+function ensureUserNotificationTable(): void {
+    $pdo = getPDO();
+    $pdo->exec(<<<SQL
+    CREATE TABLE IF NOT EXISTS user_notifications (
+        id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        user_id BIGINT UNSIGNED NOT NULL,
+        type VARCHAR(50) NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        message TEXT NOT NULL,
+        reference_id VARCHAR(50) NULL,
+        is_read BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT fk_user_notifications_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     SQL);
 }
@@ -339,14 +357,77 @@ function ensureNotificationTable(): void {
 function createNotification(string $type, string $title, string $message, ?string $referenceId = null): int {
     ensureNotificationTable();
     $pdo = getPDO();
-    $stmt = $pdo->prepare('INSERT INTO notifications (type, title, message, reference_id) VALUES (?, ?, ?, ?)');
-    $stmt->execute([$type, $title, $message, $referenceId]);
-    return (int)$pdo->lastInsertId();
+    $stmt = $pdo->prepare('INSERT INTO notifications (type, title, message, reference_id, is_read) VALUES (?, ?, ?, ?, 0)');
+    return $stmt->execute([$type, $title, $message, $referenceId]);
+}
+
+// Create a user notification (for customers)
+function createUserNotification(int $userId, string $type, string $title, string $message, ?string $referenceId = null): int {
+    ensureUserNotificationTable();
+    $pdo = getPDO();
+    $stmt = $pdo->prepare('INSERT INTO user_notifications (user_id, type, title, message, reference_id, is_read) VALUES (?, ?, ?, ?, ?, 0)');
+    return $stmt->execute([$userId, $type, $title, $message, $referenceId]);
+}
+
+// Create an admin notification (for admins)
+function createAdminNotification(string $type, string $title, string $message, ?string $referenceId = null): int {
+    $pdo = getPDO();
+    $stmt = $pdo->prepare('INSERT INTO notifications (type, title, message, reference_id, is_read) VALUES (?, ?, ?, ?, 0)');
+    return $stmt->execute([$type, $title, $message, $referenceId]);
+}
+
+// Get user notifications
+function getUserNotifications(int $userId, int $limit = 20): array {
+    ensureUserNotificationTable();
+    $pdo = getPDO();
+    $stmt = $pdo->prepare('SELECT * FROM user_notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT ?');
+    $stmt->execute([$userId, $limit]);
+    return $stmt->fetchAll();
+}
+
+// Get admin notifications
+function getAdminNotifications(int $limit = 20): array {
+    $pdo = getPDO();
+    $stmt = $pdo->prepare('SELECT * FROM notifications ORDER BY created_at DESC LIMIT ?');
+    $stmt->bindValue(1, $limit, PDO::PARAM_INT);
+    $stmt->execute();
+    return $stmt->fetchAll();
+}
+
+// Mark user notification as read
+function markUserNotificationAsRead(int $notificationId, int $userId): bool {
+    ensureUserNotificationTable();
+    $pdo = getPDO();
+    $stmt = $pdo->prepare('UPDATE user_notifications SET is_read = 1 WHERE id = ? AND user_id = ?');
+    return $stmt->execute([$notificationId, $userId]);
+}
+
+// Mark admin notification as read
+function markAdminNotificationAsRead(int $notificationId): bool {
+    $pdo = getPDO();
+    $stmt = $pdo->prepare('UPDATE notifications SET is_read = 1 WHERE id = ?');
+    return $stmt->execute([$notificationId]);
+}
+
+// Get unread user notifications count
+function getUnreadUserNotificationsCount(int $userId): int {
+    ensureUserNotificationTable();
+    $pdo = getPDO();
+    $stmt = $pdo->prepare('SELECT COUNT(*) FROM user_notifications WHERE user_id = ? AND is_read = 0');
+    $stmt->execute([$userId]);
+    return (int)$stmt->fetchColumn();
+}
+
+// Get unread admin notifications count
+function getUnreadAdminNotificationsCount(): int {
+    $pdo = getPDO();
+    $stmt = $pdo->prepare('SELECT COUNT(*) FROM notifications WHERE is_read = 0');
+    $stmt->execute([]);
+    return (int)$stmt->fetchColumn();
 }
 
 // Get all notifications (for admin)
 function getAllNotifications(int $limit = 50): array {
-    ensureNotificationTable();
     $pdo = getPDO();
     $stmt = $pdo->prepare('SELECT * FROM notifications ORDER BY created_at DESC LIMIT ?');
     $stmt->bindValue(1, $limit, PDO::PARAM_INT);
